@@ -1,21 +1,23 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { useLang } from '../contexts/LangContext'
 import { useEmployees } from '../hooks/useEmployees'
 import { supabase } from '../lib/supabase'
 import Modal from '../components/common/Modal'
 import { fmt, fmtInt } from '../utils/format'
 
-const LEVEL_LABEL = { junior:'Junior', senior:'Senior', master:'Master' }
-const SALARY_LABEL = { commission:'عمولة فقط', salary_commission:'راتب + عمولة', salary:'راتب ثابت' }
 const EMPTY_FORM = { name:'', phone:'', level:'junior', salary_type:'commission', base_salary:0, commission_rate:0 }
 
 export default function EmployeesPage() {
   const { company } = useAuth()
+  const { t } = useLang()
   const { employees, loading, loadEmployees, saveEmployee, deleteEmployee } = useEmployees(company?.id)
   const [monthRes, setMonthRes] = useState([])
   const [modal, setModal] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
   const [editId, setEditId] = useState(null)
+
+  const SALARY_LABEL = { commission: t('salary_commission'), salary_commission: t('salary_salary_commission'), salary: t('salary_salary') }
 
   useEffect(() => {
     loadEmployees()
@@ -60,27 +62,27 @@ export default function EmployeesPage() {
   return (
     <div className="page-view">
       <div className="flex-between mb-4">
-        <h1 style={{ fontSize:'20px', fontWeight:900, color:'var(--primary)' }}>👥 الموظفون</h1>
-        <button className="btn btn-primary" onClick={openNew}>➕ موظف جديد</button>
+        <h1 style={{ fontSize:'20px', fontWeight:900, color:'var(--primary)' }}>👥 {t('employees_title')}</h1>
+        <button className="btn btn-primary" onClick={openNew}>➕ {t('new_employee_btn')}</button>
       </div>
 
       <div className="stats-grid mb-4">
-        <div className="stat-card"><div className="stat-label">عدد الموظفين</div><div className="stat-value">{fmtInt(employees.length)}</div></div>
-        <div className="stat-card"><div className="stat-label">قطعات هذا الشهر</div><div className="stat-value">{fmtInt(monthRes.length)}</div></div>
-        <div className="stat-card"><div className="stat-label">إيرادات هذا الشهر</div><div className="stat-value" style={{ fontSize:'18px', direction:'ltr' }}>${fmt(totalRevenue)}</div></div>
+        <div className="stat-card"><div className="stat-label">{t('emp_count')}</div><div className="stat-value">{fmtInt(employees.length)}</div></div>
+        <div className="stat-card"><div className="stat-label">{t('month_cuts')}</div><div className="stat-value">{fmtInt(monthRes.length)}</div></div>
+        <div className="stat-card"><div className="stat-label">{t('month_rev_label')}</div><div className="stat-value" style={{ fontSize:'18px', direction:'ltr' }}>${fmt(totalRevenue)}</div></div>
       </div>
 
       <div className="card">
         <div className="table-wrapper">
           <table>
             <thead>
-              <tr><th>الاسم</th><th>الهاتف</th><th>المستوى</th><th>نوع الراتب</th><th>الراتب</th><th>العمولة%</th><th>قطعات الشهر</th><th>المستحق</th><th>الحالة</th><th className="no-print">إجراء</th></tr>
+              <tr><th>{t('th_name')}</th><th>{t('th_phone')}</th><th>{t('th_emp_level')}</th><th>{t('th_salary_type')}</th><th>{t('th_base_salary')}</th><th>{t('th_commission_pct')}</th><th>{t('th_month_cuts')}</th><th>{t('th_due')}</th><th>{t('th_status')}</th><th className="no-print">{t('th_action')}</th></tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr><td colSpan="10" style={{ textAlign:'center', padding:'20px' }}><div className="loading-spinner"></div></td></tr>
               ) : employees.length === 0 ? (
-                <tr><td colSpan="10"><div className="empty-state"><div className="icon">👥</div><p>لا يوجد موظفون</p><span>أضف موظفاً جديداً</span></div></td></tr>
+                <tr><td colSpan="10"><div className="empty-state"><div className="icon">👥</div><p>{t('no_employees_data')}</p></div></td></tr>
               ) : employees.map(emp => {
                 const empRes = monthRes.filter(r => r.employee_id === emp.id)
                 const due = calcDue(emp)
@@ -88,13 +90,13 @@ export default function EmployeesPage() {
                   <tr key={emp.id}>
                     <td style={{ fontWeight:600 }}>{emp.name}</td>
                     <td style={{ direction:'ltr' }}>{emp.phone||'-'}</td>
-                    <td><span className="badge badge-info">{LEVEL_LABEL[emp.level]||emp.level}</span></td>
+                    <td><span className="badge badge-info">{emp.level}</span></td>
                     <td>{SALARY_LABEL[emp.salary_type]||emp.salary_type}</td>
                     <td style={{ direction:'ltr' }}>${fmt(emp.base_salary)}</td>
                     <td>{fmtInt(emp.commission_rate)}%</td>
                     <td style={{ fontWeight:700 }}>{fmtInt(empRes.length)}</td>
                     <td style={{ fontWeight:700, color:'var(--success)', direction:'ltr' }}>${fmt(due)}</td>
-                    <td><span className="badge badge-success">نشط</span></td>
+                    <td><span className="badge badge-success">{t('status_active')}</span></td>
                     <td className="no-print">
                       <button className="btn btn-sm btn-outline" onClick={() => openEdit(emp)}>✏️</button>
                       <button className="btn btn-sm btn-danger" style={{ marginRight:'4px' }} onClick={() => deleteEmployee(emp.id)}>🗑</button>
@@ -107,23 +109,23 @@ export default function EmployeesPage() {
         </div>
       </div>
 
-      <Modal isOpen={modal} onClose={() => setModal(false)} title={editId ? '✏️ تعديل الموظف' : '➕ موظف جديد'} footer={
+      <Modal isOpen={modal} onClose={() => setModal(false)} title={editId ? `✏️ ${t('edit_employee_title')}` : `➕ ${t('new_employee_title')}`} footer={
         <>
-          <button className="btn btn-primary" onClick={handleSave}>💾 حفظ</button>
-          <button className="btn btn-outline" onClick={() => setModal(false)}>إلغاء</button>
+          <button className="btn btn-primary" onClick={handleSave}>💾 {t('save_btn')}</button>
+          <button className="btn btn-outline" onClick={() => setModal(false)}>{t('cancel_btn')}</button>
         </>
       }>
         <div className="grid-2">
           <div className="form-group">
-            <label className="form-label">الاسم</label>
+            <label className="form-label">{t('lbl_emp_name')}</label>
             <input className="form-control" value={form.name} onChange={e => set('name', e.target.value)} />
           </div>
           <div className="form-group">
-            <label className="form-label">الهاتف</label>
+            <label className="form-label">{t('lbl_phone')}</label>
             <input className="form-control" value={form.phone} onChange={e => set('phone', e.target.value)} />
           </div>
           <div className="form-group">
-            <label className="form-label">المستوى</label>
+            <label className="form-label">{t('lbl_emp_level')}</label>
             <select className="form-control" value={form.level} onChange={e => set('level', e.target.value)}>
               <option value="junior">Junior</option>
               <option value="senior">Senior</option>
@@ -131,22 +133,22 @@ export default function EmployeesPage() {
             </select>
           </div>
           <div className="form-group">
-            <label className="form-label">نوع الراتب</label>
+            <label className="form-label">{t('lbl_salary_type')}</label>
             <select className="form-control" value={form.salary_type} onChange={e => set('salary_type', e.target.value)}>
-              <option value="commission">عمولة فقط</option>
-              <option value="salary_commission">راتب + عمولة</option>
-              <option value="salary">راتب ثابت</option>
+              <option value="commission">{t('salary_commission')}</option>
+              <option value="salary_commission">{t('salary_salary_commission')}</option>
+              <option value="salary">{t('salary_salary')}</option>
             </select>
           </div>
           {showBase && (
             <div className="form-group">
-              <label className="form-label">الراتب الأساسي ($)</label>
+              <label className="form-label">{t('lbl_base_salary')}</label>
               <input type="number" className="form-control" value={form.base_salary} onChange={e => set('base_salary', e.target.value)} />
             </div>
           )}
           {showComm && (
             <div className="form-group">
-              <label className="form-label">نسبة العمولة (%)</label>
+              <label className="form-label">{t('lbl_commission_rate')}</label>
               <input type="number" className="form-control" value={form.commission_rate} onChange={e => set('commission_rate', e.target.value)} />
             </div>
           )}
