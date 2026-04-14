@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react'
 import { useVouchers } from '../hooks/useVouchers'
+import { useAuth } from '../contexts/AuthContext'
 import { useLang } from '../contexts/LangContext'
 import { fmt } from '../utils/format'
 
 const PARTIES = ['شركة الأمل التجارية','مؤسسة النجاح','شركة الخليج','محلات السعادة','مورد الإلكترونيات','مورد القرطاسية']
 
 export default function ReceiptVoucherPage() {
+  const { company } = useAuth()
   const { t } = useLang()
-  const { vouchers, loading, loadVouchers, saveVoucher } = useVouchers()
+  const { vouchers, loading, loadVouchers, saveVoucher } = useVouchers(company?.id)
   const [form, setForm] = useState({
     number: '', party: '', amount: 0,
     date: new Date().toISOString().split('T')[0],

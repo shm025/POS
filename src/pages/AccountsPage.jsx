@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAccounts } from '../hooks/useAccounts'
+import { useAuth } from '../contexts/AuthContext'
 import { useLang } from '../contexts/LangContext'
 import Modal from '../components/common/Modal'
 import { fmt } from '../utils/format'
@@ -7,9 +8,10 @@ import { fmt } from '../utils/format'
 const TYPE_BADGE = { asset:'badge-info', liability:'badge-danger', equity:'badge-secondary', revenue:'badge-success', expense:'badge-warning' }
 
 export default function AccountsPage() {
+  const { company } = useAuth()
   const { t } = useLang()
   const TYPE_LABEL = { asset: t('type_asset'), liability: t('type_liability'), equity: t('type_equity'), revenue: t('type_revenue'), expense: t('type_expense') }
-  const { accounts, loading, loadAccounts, saveAccount, deleteAccount } = useAccounts()
+  const { accounts, loading, loadAccounts, saveAccount, deleteAccount } = useAccounts(company?.id)
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
   const [modalOpen, setModalOpen] = useState(false)

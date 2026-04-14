@@ -5,9 +5,6 @@ import { AuthProvider } from './contexts/AuthContext'
 import { LangProvider } from './contexts/LangContext'
 import App from './App'
 import './index.css'
-import { initDB, seedData } from './lib/db'
-
-initDB().then(seedData).catch(console.error)
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <BrowserRouter>

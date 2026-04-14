@@ -1,32 +1,51 @@
 import { useState, useCallback } from 'react'
-import { dbGetAll, dbPut, dbDelete } from '../lib/db'
+import { supabase } from '../lib/supabase'
 import { notify } from '../utils/notify'
 
-export function useJournalEntries() {
+// Maps DB snake_case to the shape the pages expect
+const mapEntry = e => ({
+  ...e,
+  desc: e.description,
+  debitAccId: e.debit_acc_id,
+  creditAccId: e.credit_acc_id,
+})
+
+export function useJournalEntries(companyId) {
   const [entries, setEntries] = useState([])
   const [loading, setLoading] = useState(false)
 
   const loadEntries = useCallback(async () => {
+    if (!companyId) return []
     setLoading(true)
-    const data = await dbGetAll('journalEntries')
-    setEntries(data)
+    const { data } = await supabase
+      .from('journal_entries')
+      .select('*')
+      .eq('company_id', companyId)
+      .order('created_at', { ascending: true })
+    const mapped = (data || []).map(mapEntry)
+    setEntries(mapped)
     setLoading(false)
-    return data
-  }, [])
+    return mapped
+  }, [companyId])
 
-  const saveEntry = useCallback(async (data) => {
-    await dbPut('journalEntries', data)
+  const saveEntry = useCallback(async (formData) => {
+    await supabase.from('journal_entries').insert({
+      company_id: companyId,
+      date: formData.date,
+      description: formData.desc,
+      debit_acc_id: formData.debitAccId || null,
+      credit_acc_id: formData.creditAccId || null,
+      amount: formData.amount,
+    })
     notify('تم حفظ القيد')
-    const updated = await dbGetAll('journalEntries')
-    setEntries(updated)
-  }, [])
+    await loadEntries()
+  }, [companyId, loadEntries])
 
   const deleteEntry = useCallback(async (id) => {
-    await dbDelete('journalEntries', id)
+    await supabase.from('journal_entries').delete().eq('id', id)
     notify('تم حذف القيد')
-    const updated = await dbGetAll('journalEntries')
-    setEntries(updated)
-  }, [])
+    await loadEntries()
+  }, [loadEntries])
 
   return { entries, loading, loadEntries, saveEntry, deleteEntry }
 }

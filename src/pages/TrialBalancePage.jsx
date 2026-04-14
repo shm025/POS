@@ -1,13 +1,17 @@
-import { useState, useEffect } from 'react'
-import { dbGetAll } from '../lib/db'
+import { useEffect } from 'react'
+import { useAuth } from '../contexts/AuthContext'
+import { useAccounts } from '../hooks/useAccounts'
 import { useLang } from '../contexts/LangContext'
 import { fmt } from '../utils/format'
 
-export default function TrialBalancePage() {
-  const { t } = useLang()
-  const [accounts, setAccounts] = useState([])
+const LOCALE_MAP = { AR: 'ar-LB', EN: 'en-GB', FR: 'fr-FR' }
 
-  useEffect(() => { dbGetAll('accounts').then(setAccounts) }, [])
+export default function TrialBalancePage() {
+  const { company } = useAuth()
+  const { t, lang } = useLang()
+  const { accounts, loadAccounts } = useAccounts(company?.id)
+
+  useEffect(() => { loadAccounts() }, [loadAccounts])
 
   const totalDebit = accounts.reduce((s, a) => s + (a.debit || 0), 0)
   const totalCredit = accounts.reduce((s, a) => s + (a.credit || 0), 0)
@@ -22,7 +26,7 @@ export default function TrialBalancePage() {
       <div className="card">
         <div style={{ textAlign:'center', marginBottom:'20px' }}>
           <div style={{ fontSize:'18px', fontWeight:900 }} id="trial-co-name">CATALAN POS</div>
-          <div style={{ fontSize:'14px', color:'var(--text-muted)' }}>{t('trial_balance_sub')} — {new Date().toLocaleDateString('ar-LB')}</div>
+          <div style={{ fontSize:'14px', color:'var(--text-muted)' }}>{t('trial_balance_sub')} — {new Date().toLocaleDateString(LOCALE_MAP[lang] || 'en-GB')}</div>
         </div>
         <div className="table-wrapper">
           <table>

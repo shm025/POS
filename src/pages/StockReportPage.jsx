@@ -1,14 +1,25 @@
 import { useState, useEffect } from 'react'
-import { dbGetAll } from '../lib/db'
+import { useAuth } from '../contexts/AuthContext'
+import { supabase } from '../lib/supabase'
 import { useLang } from '../contexts/LangContext'
 import { fmt, fmtInt } from '../utils/format'
 import { exportStockCSV } from '../utils/csv'
 
 export default function StockReportPage() {
+  const { company } = useAuth()
   const { t } = useLang()
   const [items, setItems] = useState([])
 
-  useEffect(() => { dbGetAll('items').then(setItems) }, [])
+  useEffect(() => {
+    if (!company?.id) return
+    supabase
+      .from('items')
+      .select('*')
+      .eq('company_id', company.id)
+      .then(({ data }) => {
+        setItems((data || []).map(r => ({ ...r, cost: r.cost_price, price: r.selling_price, minStock: r.min_stock, desc: r.description })))
+      })
+  }, [company?.id])
 
   const totalValue = items.reduce((s, i) => s + (i.stock * i.cost), 0)
   const lowCount = items.filter(i => i.stock <= i.minStock).length
