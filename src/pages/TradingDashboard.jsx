@@ -5,9 +5,11 @@ import { useLang } from '../contexts/LangContext'
 import { supabase } from '../lib/supabase'
 import { fmt, fmtInt } from '../utils/format'
 
+const LOCALE_MAP = { AR: 'ar-LB', EN: 'en-GB', FR: 'fr-FR' }
+
 export default function TradingDashboard() {
   const { company } = useAuth()
-  const { t } = useLang()
+  const { t, lang } = useLang()
   const navigate = useNavigate()
   const [items, setItems] = useState([])
   const [invoices, setInvoices] = useState([])
@@ -45,7 +47,7 @@ export default function TradingDashboard() {
       <div className="flex-between mb-4 no-print">
         <div>
           <h1 style={{ fontSize:'22px', fontWeight:900, color:'var(--primary)' }}>{t('dashboard_title')}</h1>
-          <p className="text-muted">{new Date().toLocaleDateString('ar-LB', { weekday:'long', year:'numeric', month:'long', day:'numeric' })}</p>
+          <p className="text-muted">{new Date().toLocaleDateString(LOCALE_MAP[lang] || 'en-GB', { weekday:'long', year:'numeric', month:'long', day:'numeric' })}</p>
         </div>
         <button className="btn btn-primary" onClick={() => navigate('/invoices')}>🧾 {t('new_invoice_btn')}</button>
       </div>

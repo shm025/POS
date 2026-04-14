@@ -2,7 +2,20 @@
   "permissions": {
     "allow": [
       "Bash(npm install:*)",
-      "Bash(find /c/Users/pc/Desktop/POS -type f \\\\\\( -name \"*.jsx\" -o -name \"*.js\" -o -name \"*.tsx\" -o -name \"*.ts\" \\\\\\) ! -path \"*/node_modules/*\" -exec grep -l \"auto_parts\\\\|building_materials\\\\|barber.*business\\\\|business.*type\" {} \\\\;)"
+      "Bash(find /c/Users/pc/Desktop/POS -type f \\\\\\( -name \"*.jsx\" -o -name \"*.js\" -o -name \"*.tsx\" -o -name \"*.ts\" \\\\\\) ! -path \"*/node_modules/*\" -exec grep -l \"auto_parts\\\\|building_materials\\\\|barber.*business\\\\|business.*type\" {} \\\\;)",
+      "Bash(python3 -c \"from docx import Document; print\\('python-docx available'\\)\")",
+      "Bash(pip install:*)",
+      "Bash(python3 -c \"import sys; sys.path.insert\\(0, r'C:\\\\Users\\\\pc\\\\AppData\\\\Local\\\\spyder-6\\\\envs\\\\spyder-runtime\\\\Lib\\\\site-packages'\\); from docx import Document; print\\('OK'\\)\")",
+      "Bash(where python:*)",
+      "Bash(pip show:*)",
+      "Bash(python -c \"from docx import Document; print\\('OK'\\)\")",
+      "Bash(python -m pip install python-docx)",
+      "Bash(python \"c:\\\\Users\\\\pc\\\\Desktop\\\\POS\\\\generate_summary.py\")",
+      "Bash(python -c \"from docx.shared import RGBColor; c = RGBColor\\(0x1E,0x3A,0x5F\\); print\\(dir\\(c\\)\\)\")",
+      "Bash(python -c \"from docx.shared import RGBColor; c = RGBColor\\(0x1E,0x3A,0x5F\\); print\\(c[0],c[1],c[2]\\); print\\(str\\(c\\)\\)\")",
+      "Bash(python -c ':*)",
+      "Bash(python -c \"import docx; print\\('python-docx available'\\)\")",
+      "Bash(python build_db_reference.py)"
     ],
     "additionalDirectories": [
       "c:\\Users\\pc\\.claude\\projects\\c--Users-pc-Desktop-POS\\memory"

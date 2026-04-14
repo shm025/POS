@@ -1,11 +1,13 @@
 import DocItemRow from './DocItemRow'
+import { useLang } from '../../contexts/LangContext'
 
 export default function DocItemsTable({ items, allItems, onAddRow, onRemoveRow, onUpdateRow, onSelectItem }) {
+  const { t } = useLang()
   return (
     <div className="card mt-4">
       <div className="card-header">
-        <div className="card-title">📦 أصناف المستند</div>
-        <button className="btn btn-sm btn-primary no-print" onClick={onAddRow}>➕ إضافة صنف</button>
+        <div className="card-title">📦 {t('doc_items_title')}</div>
+        <button className="btn btn-sm btn-primary no-print" onClick={onAddRow}>➕ {t('doc_add_item')}</button>
       </div>
       <div className="table-wrapper">
         <table id="doc-items-table">

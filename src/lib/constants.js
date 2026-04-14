@@ -156,6 +156,14 @@ export const i18n = {
     lbl_address:'العنوان',lbl_phone_settings:'الهاتف',lbl_email:'البريد الإلكتروني',lbl_website:'الموقع الإلكتروني',
     lbl_currency:'العملة الافتراضية',lbl_tax_rate:'نسبة الضريبة الافتراضية (%)',
     lbl_period_start:'بداية الفترة المحاسبية',lbl_period_end:'نهاية الفترة المحاسبية',lbl_reg_number:'رقم الرجيستر',
+    // Doc editor
+    doc_info_title:'معلومات المستند',doc_number_label:'رقم المستند',doc_due_date:'تاريخ الاستحقاق',
+    doc_warehouse:'المخزن',doc_status:'الحالة',doc_party_placeholder:'اكتب اسم العميل أو المورد...',
+    doc_summary_title:'ملخص المستند',doc_subtotal:'المجموع الفرعي',doc_discount_pct:'الخصم %',
+    doc_vat_pct:'ضريبة VAT %',doc_notes_label:'ملاحظات',doc_items_title:'أصناف المستند',doc_add_item:'إضافة صنف',
+    doc_type_invoices:'فاتورة مبيع',doc_type_sales_return:'مرتجع مبيعات',doc_type_orders:'طلبية',
+    doc_type_purchases:'فاتورة شراء',doc_type_purchases_return:'مرتجع مشتريات',
+    party_customer:'العميل',party_supplier:'المورد',doc_party_required:'الرجاء اختيار',
   },
   EN: {
     loading:'Loading...',save_btn:'Save',cancel_btn:'Cancel',delete_btn:'Delete',edit_btn:'Edit',print_btn:'Print',export_btn:'Export',view_all:'View All',no_data:'No data available',
@@ -245,6 +253,14 @@ export const i18n = {
     lbl_address:'Address',lbl_phone_settings:'Phone',lbl_email:'Email',lbl_website:'Website',
     lbl_currency:'Default Currency',lbl_tax_rate:'Default Tax Rate (%)',
     lbl_period_start:'Fiscal Period Start',lbl_period_end:'Fiscal Period End',lbl_reg_number:'Registration Number',
+    // Doc editor
+    doc_info_title:'Document Info',doc_number_label:'Document No.',doc_due_date:'Due Date',
+    doc_warehouse:'Warehouse',doc_status:'Status',doc_party_placeholder:'Type customer or supplier name...',
+    doc_summary_title:'Document Summary',doc_subtotal:'Subtotal',doc_discount_pct:'Discount %',
+    doc_vat_pct:'VAT %',doc_notes_label:'Notes',doc_items_title:'Document Items',doc_add_item:'Add Item',
+    doc_type_invoices:'Sales Invoice',doc_type_sales_return:'Sales Return',doc_type_orders:'Order',
+    doc_type_purchases:'Purchase Invoice',doc_type_purchases_return:'Purchase Return',
+    party_customer:'Customer',party_supplier:'Supplier',doc_party_required:'Please select',
   },
   FR: {
     loading:'Chargement...',save_btn:'Enregistrer',cancel_btn:'Annuler',delete_btn:'Supprimer',edit_btn:'Modifier',print_btn:'Imprimer',export_btn:'Exporter',view_all:'Voir tout',no_data:'Aucune donnée',
@@ -334,5 +350,13 @@ export const i18n = {
     lbl_address:'Adresse',lbl_phone_settings:'Téléphone',lbl_email:'E-mail',lbl_website:'Site web',
     lbl_currency:'Devise par défaut',lbl_tax_rate:'Taux de taxe (%)',
     lbl_period_start:'Début de période',lbl_period_end:'Fin de période',lbl_reg_number:"Numéro d'enregistrement",
+    // Doc editor
+    doc_info_title:'Info document',doc_number_label:'N° document',doc_due_date:"Date d'échéance",
+    doc_warehouse:'Dépôt',doc_status:'Statut',doc_party_placeholder:'Tapez le nom du client ou fournisseur...',
+    doc_summary_title:'Résumé document',doc_subtotal:'Sous-total',doc_discount_pct:'Remise %',
+    doc_vat_pct:'TVA %',doc_notes_label:'Notes',doc_items_title:'Articles du document',doc_add_item:'Ajouter un article',
+    doc_type_invoices:'Facture de vente',doc_type_sales_return:'Retour de vente',doc_type_orders:'Bon de commande',
+    doc_type_purchases:"Facture d'achat",doc_type_purchases_return:"Retour d'achat",
+    party_customer:'Client',party_supplier:'Fournisseur',doc_party_required:'Veuillez sélectionner',
   },
 }
