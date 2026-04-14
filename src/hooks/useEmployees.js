@@ -19,7 +19,18 @@ export function useEmployees(companyId) {
   }
 
   async function saveEmployee(formData, editId) {
-    const data = { company_id: companyId, ...formData, active: true }
+    const data = {
+      company_id: companyId,
+      name: formData.name,
+      phone: formData.phone,
+      level: formData.level,
+      salary_type: formData.salary_type,
+      base_salary: parseFloat(formData.base_salary) || 0,
+      commission_rate: parseFloat(formData.commission_rate) || 0,
+      calendar_color: formData.calendar_color || '#3B82F6',
+      working_hours: formData.working_hours || null,
+      active: true,
+    }
     if (editId) {
       await supabase.from('employees').update(data).eq('id', editId)
     } else {

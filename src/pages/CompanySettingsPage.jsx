@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useLang } from '../contexts/LangContext'
 import { supabase } from '../lib/supabase'
 import { notify } from '../utils/notify'
+import { formatCurrency } from '../utils/format'
 
 export default function CompanySettingsPage() {
   const { company, refreshCompany } = useAuth()
@@ -19,6 +20,9 @@ export default function CompanySettingsPage() {
     period_start: '2026-01-01',
     period_end: '2026-12-31',
     reg_number: '',
+    exchange_rate: 89500,
+    timezone: 'Asia/Beirut',
+    plan: 'starter',
   })
 
   useEffect(() => {
@@ -33,6 +37,9 @@ export default function CompanySettingsPage() {
         website: company.website || '',
         tax_rate: company.tax_rate ?? 11,
         reg_number: company.reg_number || '',
+        exchange_rate: company.exchange_rate || 89500,
+        timezone: company.timezone || 'Asia/Beirut',
+        plan: company.plan || 'starter',
       }))
     }
   }, [company])
@@ -48,6 +55,10 @@ export default function CompanySettingsPage() {
       website: form.website,
       tax_rate: parseFloat(form.tax_rate) || 0,
       reg_number: form.reg_number,
+      exchange_rate: parseFloat(form.exchange_rate) || 89500,
+      exchange_rate_updated_at: new Date().toISOString(),
+      timezone: form.timezone,
+      plan: form.plan,
     }).eq('id', company.id)
 
     if (error) {
@@ -59,6 +70,7 @@ export default function CompanySettingsPage() {
   }
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+  const preview = formatCurrency(100, form.exchange_rate)
 
   return (
     <div className="page-view">
@@ -102,6 +114,27 @@ export default function CompanySettingsPage() {
               <option>USD - دولار أمريكي</option>
               <option>LBP - ليرة لبنانية</option>
               <option>EUR - يورو</option>
+            </select>
+          </div>
+          <div className="form-group">
+            <label className="form-label">💱 سعر الصرف (1 USD = ? LBP)</label>
+            <input
+              type="number"
+              className="form-control"
+              value={form.exchange_rate}
+              onChange={e => set('exchange_rate', e.target.value)}
+              placeholder="89500"
+            />
+            <div style={{ fontSize:'12px', color:'var(--text-muted)', marginTop:'4px' }}>
+              معاينة: {preview.usd} = {preview.lbp}
+            </div>
+          </div>
+          <div className="form-group">
+            <label className="form-label">المنطقة الزمنية</label>
+            <select className="form-control" value={form.timezone} onChange={e => set('timezone', e.target.value)}>
+              <option value="Asia/Beirut">Asia/Beirut (لبنان)</option>
+              <option value="UTC">UTC</option>
+              <option value="Europe/London">Europe/London</option>
             </select>
           </div>
           <div className="form-group">

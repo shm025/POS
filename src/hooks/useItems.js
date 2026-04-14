@@ -2,15 +2,6 @@ import { useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { notify } from '../utils/notify'
 
-// Cloud schema: cost_price, selling_price, min_stock, description
-const mapItem = row => ({
-  ...row,
-  cost: row.cost_price,
-  price: row.selling_price,
-  minStock: row.min_stock,
-  desc: row.description,
-})
-
 export function useItems(companyId) {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(false)
@@ -22,11 +13,24 @@ export function useItems(companyId) {
       .from('items')
       .select('*')
       .eq('company_id', companyId)
-      .order('created_at', { ascending: true })
-    const mapped = (data || []).map(mapItem)
-    setItems(mapped)
+      .eq('is_active', true)
+      .order('name')
+    setItems(data || [])
     setLoading(false)
-    return mapped
+    return data || []
+  }, [companyId])
+
+  // Full-text + barcode search for POS checkout
+  const searchItems = useCallback(async (q) => {
+    if (!companyId || !q) return []
+    const { data } = await supabase
+      .from('items')
+      .select('*')
+      .eq('company_id', companyId)
+      .eq('is_active', true)
+      .or(`name.ilike.%${q}%,code.ilike.%${q}%,barcode.ilike.%${q}%,brand.ilike.%${q}%`)
+      .limit(20)
+    return data || []
   }, [companyId])
 
   const saveItem = useCallback(async (formData, editId) => {
@@ -36,31 +40,40 @@ export function useItems(companyId) {
       name: formData.name,
       category: formData.category,
       unit: formData.unit,
-      cost_price: formData.cost,
-      selling_price: formData.price,
-      stock: formData.stock,
-      min_stock: formData.minStock,
-      description: formData.desc,
+      cost_price: parseFloat(formData.cost_price || formData.cost) || 0,
+      selling_price: parseFloat(formData.selling_price || formData.price) || 0,
+      stock: parseInt(formData.stock) || 0,
+      reorder_point: parseInt(formData.reorder_point || formData.minStock) || 5,
+      reorder_qty: parseInt(formData.reorder_qty) || 10,
+      barcode: formData.barcode || null,
+      brand: formData.brand || null,
+      tax_rate: parseFloat(formData.tax_rate) || 0,
+      sell_by_weight: formData.sell_by_weight || false,
+      is_active: true,
     }
     if (editId) {
-      await supabase.from('items').update(data).eq('id', editId)
+      const { error } = await supabase.from('items').update(data).eq('id', editId)
+      if (error) { notify('خطأ في الحفظ', 'error'); return }
     } else {
-      await supabase.from('items').insert(data)
+      const { error } = await supabase.from('items').insert(data)
+      if (error) { notify('خطأ في الحفظ', 'error'); return }
     }
     notify('تم حفظ الصنف بنجاح')
     await loadItems()
   }, [companyId, loadItems])
 
   const deleteItem = useCallback(async (id) => {
-    await supabase.from('items').delete().eq('id', id)
+    if (!confirm('هل تريد حذف هذا الصنف؟')) return
+    // Soft delete
+    await supabase.from('items').update({ is_active: false }).eq('id', id)
     notify('تم حذف الصنف')
     await loadItems()
   }, [loadItems])
 
   const getItem = useCallback(async (id) => {
     const { data } = await supabase.from('items').select('*').eq('id', id).single()
-    return data ? mapItem(data) : null
+    return data || null
   }, [])
 
-  return { items, loading, loadItems, saveItem, deleteItem, getItem }
+  return { items, loading, loadItems, searchItems, saveItem, deleteItem, getItem }
 }
