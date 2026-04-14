@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react'
 import { useJournalEntries } from '../hooks/useJournalEntries'
 import { useAccounts } from '../hooks/useAccounts'
+import { useAuth } from '../contexts/AuthContext'
 import { useLang } from '../contexts/LangContext'
 import Modal from '../components/common/Modal'
 import { fmt } from '../utils/format'
 
 export default function JournalEntriesPage() {
+  const { company } = useAuth()
   const { t } = useLang()
-  const { entries, loading, loadEntries, saveEntry, deleteEntry } = useJournalEntries()
-  const { accounts, loadAccounts } = useAccounts()
+  const { entries, loading, loadEntries, saveEntry, deleteEntry } = useJournalEntries(company?.id)
+  const { accounts, loadAccounts } = useAccounts(company?.id)
   const [modalOpen, setModalOpen] = useState(false)
   const [form, setForm] = useState({ date: new Date().toISOString().split('T')[0], desc:'', debitAccId:'', creditAccId:'', amount:0 })
 
@@ -20,6 +22,7 @@ export default function JournalEntriesPage() {
     const amt = parseFloat(form.amount) || 0
     if (!dA || !cA || !amt) { return }
     await saveEntry({ date:form.date, desc:form.desc, debitAccId:dA, creditAccId:cA, amount:amt })
+
     setModalOpen(false)
     setForm({ date: new Date().toISOString().split('T')[0], desc:'', debitAccId:'', creditAccId:'', amount:0 })
   }

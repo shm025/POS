@@ -1,21 +1,28 @@
 import { useState, useEffect } from 'react'
-import { dbGetAll, dbPut, dbDelete } from '../lib/db'
+import { useAuth } from '../contexts/AuthContext'
+import { supabase } from '../lib/supabase'
 import { notify } from '../utils/notify'
 import { useLang } from '../contexts/LangContext'
 import Modal from '../components/common/Modal'
 
 export default function WarehousePage() {
+  const { company } = useAuth()
   const { t } = useLang()
   const [warehouses, setWarehouses] = useState([])
   const [modalOpen, setModalOpen] = useState(false)
   const [form, setForm] = useState({ name:'', location:'', manager:'' })
 
-  const load = () => dbGetAll('warehouses').then(setWarehouses)
-  useEffect(() => { load() }, [])
+  const load = async () => {
+    if (!company?.id) return
+    const { data } = await supabase.from('warehouses').select('*').eq('company_id', company.id).order('created_at', { ascending: true })
+    setWarehouses(data || [])
+  }
+
+  useEffect(() => { load() }, [company?.id])
 
   async function handleSave() {
     if (!form.name) { notify('أدخل اسم المخزن', 'error'); return }
-    await dbPut('warehouses', form)
+    await supabase.from('warehouses').insert({ company_id: company.id, ...form })
     notify('تم إضافة المخزن')
     setModalOpen(false)
     setForm({ name:'', location:'', manager:'' })
@@ -23,7 +30,7 @@ export default function WarehousePage() {
   }
 
   async function handleDelete(id) {
-    await dbDelete('warehouses', id)
+    await supabase.from('warehouses').delete().eq('id', id)
     notify('تم حذف المخزن')
     load()
   }

@@ -1,6 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useDocuments } from '../../hooks/useDocuments'
+import { supabase } from '../../lib/supabase'
 import { DOC_TYPES } from '../../lib/constants'
 import TypeaheadInput from '../common/TypeaheadInput'
 import DocItemsTable from './DocItemsTable'
@@ -9,11 +10,12 @@ import DocPrintHeader from './DocPrintHeader'
 
 export default function DocEditor({ docType, docId }) {
   const { company } = useAuth()
+  const [warehouses, setWarehouses] = useState([])
   const {
     docMeta, docItems, allItems, partyCache, loading,
     subtotal, afterDisc, total, totalQty, discount, tax,
     loadDoc, loadPartyCache, addRow, removeRow, updateRow, selectItem, updateMeta, saveDoc,
-  } = useDocuments()
+  } = useDocuments(company?.id)
 
   const cfg = DOC_TYPES[docType] || DOC_TYPES.invoices
 
@@ -24,6 +26,12 @@ export default function DocEditor({ docType, docId }) {
   useEffect(() => {
     if (company?.id) loadPartyCache(company.id)
   }, [company, loadPartyCache])
+
+  useEffect(() => {
+    if (!company?.id) return
+    supabase.from('warehouses').select('name').eq('company_id', company.id).order('created_at', { ascending: true })
+      .then(({ data }) => setWarehouses((data || []).map(w => w.name)))
+  }, [company?.id])
 
   if (loading) return <div style={{ padding:'40px', textAlign:'center' }}>جاري التحميل...</div>
 
@@ -85,8 +93,10 @@ export default function DocEditor({ docType, docId }) {
             <label className="form-label">المخزن</label>
             <select className="form-control" id="doc-warehouse"
               value={docMeta.warehouse} onChange={e => updateMeta('warehouse', e.target.value)}>
-              <option>المخزن الرئيسي</option>
-              <option>مخزن فرعي</option>
+              {warehouses.length > 0
+                ? warehouses.map(w => <option key={w}>{w}</option>)
+                : <option>المخزن الرئيسي</option>
+              }
             </select>
           </div>
 

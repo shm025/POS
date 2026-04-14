@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useLang } from '../contexts/LangContext'
-import { dbGetAll } from '../lib/db'
+import { supabase } from '../lib/supabase'
 import { fmt, fmtInt } from '../utils/format'
 
 export default function TradingDashboard() {
@@ -13,24 +13,28 @@ export default function TradingDashboard() {
   const [invoices, setInvoices] = useState([])
 
   useEffect(() => {
-    Promise.all([dbGetAll('items'), dbGetAll('invoices')]).then(([it, inv]) => {
-      setItems(it)
-      setInvoices(inv)
+    if (!company?.id) return
+    Promise.all([
+      supabase.from('items').select('*').eq('company_id', company.id),
+      supabase.from('invoices').select('*').eq('company_id', company.id).eq('doc_type', 'invoices').order('created_at', { ascending: false }),
+    ]).then(([{ data: it }, { data: inv }]) => {
+      setItems((it || []).map(r => ({ ...r, minStock: r.min_stock })))
+      setInvoices(inv || [])
     })
-  }, [])
+  }, [company?.id])
 
   const totalRevenue = invoices.reduce((s, i) => s + parseFloat(i.total || 0), 0)
   const paidCount = invoices.filter(i => i.status === 'paid').length
   const lowStock = items.filter(i => i.stock <= i.minStock)
   const totalUnits = items.reduce((s, i) => s + (i.stock || 0), 0)
 
-  // Top customers
+  // customer_name is the party field in cloud schema
   const custMap = {}
-  invoices.forEach(i => { custMap[i.party] = (custMap[i.party] || 0) + parseFloat(i.total || 0) })
+  invoices.forEach(i => { custMap[i.customer_name] = (custMap[i.customer_name] || 0) + parseFloat(i.total || 0) })
   const topCustomers = Object.entries(custMap).sort((a, b) => b[1] - a[1]).slice(0, 5)
   const maxCust = topCustomers[0]?.[1] || 1
 
-  const recentInvoices = [...invoices].reverse().slice(0, 5)
+  const recentInvoices = invoices.slice(0, 5)
 
   const chartVals = [65, 80, 72, 90, 85, 95]
   const chartMax = Math.max(...chartVals)
@@ -117,7 +121,7 @@ export default function TradingDashboard() {
               <div key={inv.id} className="flex-between" style={{ padding:'8px 0', borderBottom:'1px solid var(--border-light)', fontSize:'13px' }}>
                 <div>
                   <div style={{ fontWeight:600 }}>{inv.number}</div>
-                  <div style={{ color:'var(--text-muted)' }}>{inv.party}</div>
+                  <div style={{ color:'var(--text-muted)' }}>{inv.customer_name}</div>
                 </div>
                 <div style={{ textAlign:'left' }}>
                   <div style={{ fontWeight:700, direction:'ltr' }}>${fmt(inv.total)}</div>

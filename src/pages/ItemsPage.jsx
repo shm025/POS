@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react'
 import { useItems } from '../hooks/useItems'
+import { useAuth } from '../contexts/AuthContext'
 import { useLang } from '../contexts/LangContext'
 import Modal from '../components/common/Modal'
 import { fmt, fmtInt } from '../utils/format'
 import { exportItemsCSV } from '../utils/csv'
 
 export default function ItemsPage() {
+  const { company } = useAuth()
   const { t } = useLang()
-  const { items, loading, loadItems, saveItem, deleteItem } = useItems()
+  const { items, loading, loadItems, saveItem, deleteItem } = useItems(company?.id)
   const [search, setSearch] = useState('')
   const [catFilter, setCatFilter] = useState('')
   const [modalOpen, setModalOpen] = useState(false)

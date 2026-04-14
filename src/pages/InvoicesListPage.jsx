@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { dbGetAll, dbDelete } from '../lib/db'
+import { useAuth } from '../contexts/AuthContext'
+import { supabase } from '../lib/supabase'
 import { notify } from '../utils/notify'
 import { useLang } from '../contexts/LangContext'
 import { fmt } from '../utils/format'
@@ -8,21 +9,34 @@ import { fmt } from '../utils/format'
 const STATUS_BADGE = { paid:'badge-success', unpaid:'badge-warning', partial:'badge-info', cancelled:'badge-danger' }
 
 export default function InvoicesListPage() {
+  const { company } = useAuth()
   const { t } = useLang()
   const [invoices, setInvoices] = useState([])
   const [search, setSearch] = useState('')
   const navigate = useNavigate()
 
-  const load = () => dbGetAll('invoices').then(data => setInvoices([...data].reverse()))
-  useEffect(() => { load() }, [])
+  const load = async () => {
+    if (!company?.id) return
+    const { data } = await supabase
+      .from('invoices')
+      .select('*')
+      .eq('company_id', company.id)
+      .eq('doc_type', 'invoices')
+      .order('created_at', { ascending: false })
+    setInvoices(data || [])
+  }
+
+  useEffect(() => { load() }, [company?.id])
 
   const filtered = invoices.filter(i =>
-    !search || (i.number||'').toLowerCase().includes(search.toLowerCase()) || (i.party||'').toLowerCase().includes(search.toLowerCase())
+    !search ||
+    (i.number||'').toLowerCase().includes(search.toLowerCase()) ||
+    (i.customer_name||'').toLowerCase().includes(search.toLowerCase())
   )
 
   async function handleDelete(id) {
     if (!confirm(t('confirm_delete_invoice'))) return
-    await dbDelete('invoices', id)
+    await supabase.from('invoices').delete().eq('id', id)
     notify('تم الحذف')
     load()
   }
@@ -55,9 +69,9 @@ export default function InvoicesListPage() {
                 return (
                   <tr key={inv.id}>
                     <td><code>{inv.number}</code></td>
-                    <td style={{ fontWeight:600 }}>{inv.party||'-'}</td>
+                    <td style={{ fontWeight:600 }}>{inv.customer_name||'-'}</td>
                     <td>{inv.date||'-'}</td>
-                    <td>{inv.dueDate||'-'}</td>
+                    <td>{inv.due_date||'-'}</td>
                     <td style={{ fontWeight:700, color:'var(--primary)', direction:'ltr' }}>${fmt(inv.total)}</td>
                     <td><span className={`badge ${STATUS_BADGE[inv.status]||'badge-secondary'}`}>{STATUS_LABEL[inv.status]||inv.status}</span></td>
                     <td className="no-print">

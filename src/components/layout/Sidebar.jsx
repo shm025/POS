@@ -21,11 +21,11 @@ export default function Sidebar() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  const businessType = company?.business_type || 'auto_parts'
-  const items = SIDEBAR_MENUS[businessType] || SIDEBAR_MENUS.auto_parts
+  const businessType = company?.business_type || 'retail'
+  const items = SIDEBAR_MENUS[businessType] || SIDEBAR_MENUS.retail
   const year = new Date().getFullYear()
 
-  const bizLabel = { barber: t('biz_barber'), auto_parts: t('biz_auto_parts'), building_materials: t('biz_building') }
+  const bizLabel = { barber: t('biz_barber'), retail: t('biz_retail') }
 
   function isActive(page) {
     const path = location.pathname.replace('/', '')

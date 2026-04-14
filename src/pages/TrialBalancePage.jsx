@@ -1,13 +1,15 @@
-import { useState, useEffect } from 'react'
-import { dbGetAll } from '../lib/db'
+import { useEffect } from 'react'
+import { useAuth } from '../contexts/AuthContext'
+import { useAccounts } from '../hooks/useAccounts'
 import { useLang } from '../contexts/LangContext'
 import { fmt } from '../utils/format'
 
 export default function TrialBalancePage() {
+  const { company } = useAuth()
   const { t } = useLang()
-  const [accounts, setAccounts] = useState([])
+  const { accounts, loadAccounts } = useAccounts(company?.id)
 
-  useEffect(() => { dbGetAll('accounts').then(setAccounts) }, [])
+  useEffect(() => { loadAccounts() }, [loadAccounts])
 
   const totalDebit = accounts.reduce((s, a) => s + (a.debit || 0), 0)
   const totalCredit = accounts.reduce((s, a) => s + (a.credit || 0), 0)

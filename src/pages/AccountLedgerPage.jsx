@@ -1,39 +1,37 @@
 import { useState, useEffect } from 'react'
-import { dbGetAll, dbGet } from '../lib/db'
+import { useAuth } from '../contexts/AuthContext'
+import { useAccounts } from '../hooks/useAccounts'
+import { useJournalEntries } from '../hooks/useJournalEntries'
 import { useLang } from '../contexts/LangContext'
 import { fmt } from '../utils/format'
 
 export default function AccountLedgerPage() {
+  const { company } = useAuth()
   const { t } = useLang()
-  const [accounts, setAccounts] = useState([])
+  const { accounts, loadAccounts } = useAccounts(company?.id)
+  const { entries, loadEntries } = useJournalEntries(company?.id)
   const [selectedId, setSelectedId] = useState('')
   const [fromDate, setFromDate] = useState('')
-  const [entries, setEntries] = useState([])
   const [account, setAccount] = useState(null)
   const [rows, setRows] = useState([])
 
-  useEffect(() => {
-    dbGetAll('accounts').then(setAccounts)
-    dbGetAll('journalEntries').then(setEntries)
-  }, [])
+  useEffect(() => { loadAccounts(); loadEntries() }, [loadAccounts, loadEntries])
 
   useEffect(() => {
     if (!selectedId) { setRows([]); setAccount(null); return }
-    const id = parseInt(selectedId)
-    dbGet('accounts', id).then(acc => {
-      setAccount(acc)
-      if (!acc) return
-      const relevant = entries.filter(e => e.debitAccId === id || e.creditAccId === id)
-      let bal = (acc.debit || 0) - (acc.credit || 0)
-      const r = relevant.map(e => {
-        const isDr = e.debitAccId === id
-        const amt = parseFloat(e.amount) || 0
-        if (isDr) bal += amt; else bal -= amt
-        return { ...e, isDr, amt, runBal: bal }
-      })
-      setRows(r)
+    const acc = accounts.find(a => a.id === selectedId)
+    setAccount(acc || null)
+    if (!acc) return
+    const relevant = entries.filter(e => e.debitAccId === selectedId || e.creditAccId === selectedId)
+    let bal = (acc.debit || 0) - (acc.credit || 0)
+    const r = relevant.map(e => {
+      const isDr = e.debitAccId === selectedId
+      const amt = parseFloat(e.amount) || 0
+      if (isDr) bal += amt; else bal -= amt
+      return { ...e, isDr, amt, runBal: bal }
     })
-  }, [selectedId, entries])
+    setRows(r)
+  }, [selectedId, entries, accounts])
 
   return (
     <div className="page-view">
