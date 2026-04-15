@@ -15,7 +15,7 @@ const PAGE_KEY = {
   'company-settings': 'nav_company_settings',
 }
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen, onClose }) {
   const { company, logout } = useAuth()
   const { t } = useLang()
   const navigate = useNavigate()
@@ -33,8 +33,13 @@ export default function Sidebar() {
     return path === page || path.startsWith(page + '/')
   }
 
+  function handleNav(page) {
+    navigate('/' + page)
+    onClose?.()
+  }
+
   return (
-    <div className="sidebar">
+    <div className={`sidebar${isOpen ? ' open' : ''}`}>
       <div className="sidebar-logo">
         <h2>{company?.name || 'CATALAN POS'}</h2>
         <p>{bizLabel[businessType] || ''}</p>
@@ -48,7 +53,7 @@ export default function Sidebar() {
         <div
           key={item.page}
           className={`nav-item${isActive(item.page) ? ' active' : ''}`}
-          onClick={() => navigate('/' + item.page)}
+          onClick={() => handleNav(item.page)}
         >
           <span className="nav-icon">{item.icon}</span>
           <span>{t(PAGE_KEY[item.page] || item.page)}</span>
@@ -58,14 +63,7 @@ export default function Sidebar() {
       <div className="sidebar-logout" style={{ marginTop: 'auto', padding: '16px' }}>
         <button
           onClick={logout}
-          style={{
-            width: '100%', padding: '10px',
-            background: 'rgba(255,255,255,0.06)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: '8px', color: 'rgba(255,255,255,0.6)',
-            cursor: 'pointer', fontFamily: "'Cairo',sans-serif",
-            fontSize: '13px', fontWeight: 600,
-          }}
+          className="sidebar-logout-btn"
         >
           🚪 {t('logout')}
         </button>

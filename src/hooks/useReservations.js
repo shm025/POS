@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { notify } from '../utils/notify'
 
@@ -6,7 +6,7 @@ export function useReservations(companyId) {
   const [reservations, setReservations] = useState([])
   const [loading, setLoading] = useState(false)
 
-  async function loadReservations({ statusFilter = '', dateFilter = '' } = {}) {
+  const loadReservations = useCallback(async ({ statusFilter = '', dateFilter = '' } = {}) => {
     if (!companyId) return
     setLoading(true)
     let query = supabase
@@ -19,9 +19,9 @@ export function useReservations(companyId) {
     const { data } = await query
     setReservations(data || [])
     setLoading(false)
-  }
+  }, [companyId])
 
-  async function saveReservation(formData, editId) {
+  const saveReservation = useCallback(async (formData, editId, filters = {}) => {
     const data = { company_id: companyId, ...formData }
     if (editId) {
       await supabase.from('reservations').update(data).eq('id', editId)
@@ -29,21 +29,21 @@ export function useReservations(companyId) {
       await supabase.from('reservations').insert(data)
     }
     notify('تم حفظ الحجز بنجاح')
-    await loadReservations()
-  }
+    await loadReservations(filters)
+  }, [companyId, loadReservations])
 
-  async function markDone(id) {
+  const markDone = useCallback(async (id, filters = {}) => {
     await supabase.from('reservations').update({ status: 'done' }).eq('id', id)
     notify('تم تأكيد إنجاز الحجز ✅')
-    await loadReservations()
-  }
+    await loadReservations(filters)
+  }, [loadReservations])
 
-  async function deleteReservation(id) {
+  const deleteReservation = useCallback(async (id, filters = {}) => {
     if (!confirm('هل تريد حذف هذا الحجز؟')) return
     await supabase.from('reservations').delete().eq('id', id)
     notify('تم حذف الحجز')
-    await loadReservations()
-  }
+    await loadReservations(filters)
+  }, [loadReservations])
 
   return { reservations, loading, loadReservations, saveReservation, markDone, deleteReservation }
 }

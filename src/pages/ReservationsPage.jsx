@@ -33,11 +33,11 @@ export default function ReservationsPage() {
 
   useEffect(() => {
     loadReservations({ statusFilter, dateFilter })
-  }, [company?.id, statusFilter, dateFilter])
+  }, [company?.id, statusFilter, dateFilter, loadReservations])
 
   useEffect(() => {
     if (!company?.id) return
-    supabase.from('services').select('*').eq('company_id', company.id).eq('active', true).then(({ data }) => setServices(data || []))
+    supabase.from('services').select('*').eq('company_id', company.id).eq('is_active', true).then(({ data }) => setServices(data || []))
     supabase.from('employees').select('*').eq('company_id', company.id).eq('active', true).then(({ data }) => setEmployees(data || []))
   }, [company?.id])
 
@@ -84,7 +84,7 @@ export default function ReservationsPage() {
       employee_name: emp ? emp.name : (form.employee_name || null),
       price: parseFloat(form.price) || 0,
     }
-    await saveReservation(data, editId)
+    await saveReservation(data, editId, { statusFilter, dateFilter })
     setModal(false)
   }
 
@@ -140,8 +140,8 @@ export default function ReservationsPage() {
                   <td><span className={`badge ${STATUS_BADGE[r.status]||'badge-secondary'}`}>{STATUS_LABEL[r.status]||r.status}</span></td>
                   <td className="no-print">
                     <button className="btn btn-sm btn-outline" onClick={() => openEdit(r)}>✏️</button>
-                    <button className="btn btn-sm btn-success btn-sm" style={{ marginRight:'4px' }} onClick={() => markDone(r.id)}>✅</button>
-                    <button className="btn btn-sm btn-danger" style={{ marginRight:'4px' }} onClick={() => deleteReservation(r.id)}>🗑</button>
+                    <button className="btn btn-sm btn-success btn-sm" style={{ marginRight:'4px' }} onClick={() => markDone(r.id, { statusFilter, dateFilter })}>✅</button>
+                    <button className="btn btn-sm btn-danger" style={{ marginRight:'4px' }} onClick={() => deleteReservation(r.id, { statusFilter, dateFilter })}>🗑</button>
                   </td>
                 </tr>
               ))}

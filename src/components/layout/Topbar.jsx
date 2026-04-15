@@ -1,7 +1,7 @@
 import { useAuth } from '../../contexts/AuthContext'
 import { useLang } from '../../contexts/LangContext'
 
-export default function Topbar() {
+export default function Topbar({ onMenuOpen }) {
   const { company, profile, logout } = useAuth()
   const { lang, setLang } = useLang()
 
@@ -14,6 +14,7 @@ export default function Topbar() {
 
   return (
     <div className="topbar no-print">
+      <button className="hamburger-btn" onClick={onMenuOpen}>☰</button>
       <div>
         <div className="topbar-company">{company?.name || 'CATALAN POS'}</div>
         <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{company?.address || ''}</div>
@@ -39,7 +40,7 @@ export default function Topbar() {
         <button
           onClick={logout}
           className="mobile-logout"
-          style={{ display: 'none', padding: '6px 10px', background: 'rgba(139,26,26,0.1)', border: '1px solid var(--border)', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', color: 'var(--primary)' }}
+          style={{ display: 'none', padding: '6px 10px', background: 'rgba(10,102,194,0.1)', border: '1px solid var(--border)', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', color: 'var(--primary)' }}
         >
           🚪
         </button>
