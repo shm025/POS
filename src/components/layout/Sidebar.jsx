@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useLang } from '../../contexts/LangContext'
-import { SIDEBAR_MENUS } from '../../lib/constants'
+import { SIDEBAR_MENUS, BUSINESS_EMAILS } from '../../lib/constants'
 
 const PAGE_KEY = {
   dashboard: 'nav_dashboard', services: 'nav_services', employees: 'nav_employees',
@@ -16,12 +16,15 @@ const PAGE_KEY = {
 }
 
 export default function Sidebar({ isOpen, onClose }) {
-  const { company, logout } = useAuth()
+  const { user, company, logout } = useAuth()
   const { t } = useLang()
   const navigate = useNavigate()
   const location = useLocation()
 
-  const businessType = company?.business_type || 'retail'
+  const email = user?.email
+  const businessType = email === BUSINESS_EMAILS.barber ? 'barber'
+    : email === BUSINESS_EMAILS.retail ? 'retail'
+    : company?.business_type || 'retail'
   const items = SIDEBAR_MENUS[businessType] || SIDEBAR_MENUS.retail
   const year = new Date().getFullYear()
 

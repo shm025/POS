@@ -1,3 +1,8 @@
+export const BUSINESS_EMAILS = {
+  retail: 'retail@test.com',
+  barber: 'barber@test.com',
+}
+
 export const DOC_TYPES = {
   invoices:          { label_ar:'فاتورة مبيع',      label_en:'Sales Invoice',      prefix:'INV', store:'invoices',      partyLabel_ar:'العميل',  partyLabel_en:'Customer',  icon:'🧾', parties:['شركة الأمل التجارية','مؤسسة النجاح','شركة الخليج','محلات السعادة','مجموعة الفجر','التجارية للأعمال'] },
   'sales-return':    { label_ar:'مرتجع مبيعات',     label_en:'Sales Return',       prefix:'SR',  store:'salesReturns',  partyLabel_ar:'العميل',  partyLabel_en:'Customer',  icon:'↩️', parties:['شركة الأمل التجارية','مؤسسة النجاح','شركة الخليج','محلات السعادة'] },
