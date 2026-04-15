@@ -1,41 +1,54 @@
 import { useState, useCallback } from 'react'
-import { dbGetAll, dbPut, dbDelete } from '../lib/db'
+import { supabase } from '../lib/supabase'
+import { useLang } from '../contexts/LangContext'
 import { notify } from '../utils/notify'
 
-export function useAccounts() {
+export function useAccounts(companyId) {
+  const { t } = useLang()
   const [accounts, setAccounts] = useState([])
   const [loading, setLoading] = useState(false)
 
   const loadAccounts = useCallback(async () => {
+    if (!companyId) return []
     setLoading(true)
-    const data = await dbGetAll('accounts')
-    setAccounts(data)
+    const { data } = await supabase
+      .from('accounts')
+      .select('*')
+      .eq('company_id', companyId)
+      .order('code', { ascending: true })
+    setAccounts(data || [])
     setLoading(false)
-    return data
-  }, [])
+    return data || []
+  }, [companyId])
 
   const saveAccount = useCallback(async (formData, editId) => {
     const balance = parseFloat(formData.balance) || 0
     const data = {
+      company_id: companyId,
       code: formData.code,
       name: formData.name,
       type: formData.type,
       debit: balance > 0 ? balance : 0,
       credit: balance < 0 ? Math.abs(balance) : 0,
     }
-    if (editId) data.id = parseInt(editId)
-    await dbPut('accounts', data)
-    notify('تم حفظ الحساب')
-    const updated = await dbGetAll('accounts')
-    setAccounts(updated)
-  }, [])
+    if (editId) {
+      const { error } = await supabase.from('accounts').update(data).eq('id', editId)
+      if (error) { notify(t('save_error') + ': ' + error.message, 'error'); return false }
+    } else {
+      const { error } = await supabase.from('accounts').insert(data)
+      if (error) { notify(t('save_error') + ': ' + error.message, 'error'); return false }
+    }
+    notify(t('notify_saved'))
+    await loadAccounts()
+    return true
+  }, [companyId, loadAccounts, t])
 
   const deleteAccount = useCallback(async (id) => {
-    await dbDelete('accounts', id)
-    notify('تم حذف الحساب')
-    const updated = await dbGetAll('accounts')
-    setAccounts(updated)
-  }, [])
+    if (!confirm(t('confirm_delete'))) return
+    await supabase.from('accounts').delete().eq('id', id)
+    notify(t('notify_deleted'))
+    await loadAccounts()
+  }, [loadAccounts, t])
 
   return { accounts, loading, loadAccounts, saveAccount, deleteAccount }
 }

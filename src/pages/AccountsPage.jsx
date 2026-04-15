@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react'
 import { useAccounts } from '../hooks/useAccounts'
+import { useAuth } from '../contexts/AuthContext'
+import { useLang } from '../contexts/LangContext'
 import Modal from '../components/common/Modal'
 import { fmt } from '../utils/format'
 
-const TYPE_LABEL = { asset:'أصول', liability:'خصوم', equity:'حقوق ملكية', revenue:'إيرادات', expense:'مصاريف' }
 const TYPE_BADGE = { asset:'badge-info', liability:'badge-danger', equity:'badge-secondary', revenue:'badge-success', expense:'badge-warning' }
 
 export default function AccountsPage() {
-  const { accounts, loading, loadAccounts, saveAccount, deleteAccount } = useAccounts()
+  const { company } = useAuth()
+  const { t } = useLang()
+  const TYPE_LABEL = { asset: t('type_asset'), liability: t('type_liability'), equity: t('type_equity'), revenue: t('type_revenue'), expense: t('type_expense') }
+  const { accounts, loading, loadAccounts, saveAccount, deleteAccount } = useAccounts(company?.id)
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
@@ -38,28 +42,28 @@ export default function AccountsPage() {
   return (
     <div className="page-view">
       <div className="flex-between mb-4 no-print">
-        <h1 style={{ fontSize:'20px', fontWeight:900, color:'var(--primary)' }}>📒 دليل الحسابات</h1>
-        <button className="btn btn-primary" onClick={openNew}>➕ حساب جديد</button>
+        <h1 style={{ fontSize:'20px', fontWeight:900, color:'var(--primary)' }}>📒 {t('accounts_title')}</h1>
+        <button className="btn btn-primary" onClick={openNew}>➕ {t('new_account_btn')}</button>
       </div>
 
       <div className="card">
         <div className="search-bar no-print">
-          <input className="form-control" placeholder="🔍 بحث..." value={search} onChange={e => setSearch(e.target.value)} />
+          <input className="form-control" placeholder={`🔍 ${t('search_placeholder')}`} value={search} onChange={e => setSearch(e.target.value)} />
           <select className="form-control" style={{ width:'160px' }} value={typeFilter} onChange={e => setTypeFilter(e.target.value)}>
-            <option value="">كل الأنواع</option>
+            <option value="">{t('all_types')}</option>
             {Object.entries(TYPE_LABEL).map(([k,v]) => <option key={k} value={k}>{v}</option>)}
           </select>
         </div>
         <div className="table-wrapper">
           <table>
             <thead>
-              <tr><th>الكود</th><th>الاسم</th><th>النوع</th><th>مدين</th><th>دائن</th><th>الرصيد</th><th className="no-print">إجراء</th></tr>
+              <tr><th>{t('th_code')}</th><th>{t('th_name')}</th><th>{t('lbl_type')}</th><th>{t('th_debit')}</th><th>{t('th_credit')}</th><th>{t('th_balance')}</th><th className="no-print">{t('th_action')}</th></tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan="7" style={{ textAlign:'center', padding:'20px' }}>جاري التحميل...</td></tr>
+                <tr><td colSpan="7" style={{ textAlign:'center', padding:'20px' }}>{t('loading')}</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan="7"><div className="empty-state"><div className="icon">📒</div><p>لا توجد حسابات</p></div></td></tr>
+                <tr><td colSpan="7"><div className="empty-state"><div className="icon">📒</div><p>{t('no_accounts')}</p></div></td></tr>
               ) : filtered.map(a => {
                 const bal = (a.debit||0) - (a.credit||0)
                 return (
@@ -84,19 +88,19 @@ export default function AccountsPage() {
       <Modal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
-        title="➕ حساب جديد"
-        footer={<><button className="btn btn-primary" onClick={handleSave}>💾 حفظ</button><button className="btn btn-outline" onClick={() => setModalOpen(false)}>إلغاء</button></>}
+        title={`➕ ${t('new_account_title')}`}
+        footer={<><button className="btn btn-primary" onClick={handleSave}>💾 {t('save_btn')}</button><button className="btn btn-outline" onClick={() => setModalOpen(false)}>{t('cancel_btn')}</button></>}
       >
         <div className="grid-2">
-          <div className="form-group"><label className="form-label">كود الحساب *</label><input className="form-control" value={form.code} onChange={f('code')} /></div>
-          <div className="form-group"><label className="form-label">اسم الحساب *</label><input className="form-control" value={form.name} onChange={f('name')} /></div>
+          <div className="form-group"><label className="form-label">{t('lbl_acc_code')} *</label><input className="form-control" value={form.code} onChange={f('code')} /></div>
+          <div className="form-group"><label className="form-label">{t('lbl_acc_name')} *</label><input className="form-control" value={form.name} onChange={f('name')} /></div>
           <div className="form-group">
-            <label className="form-label">نوع الحساب</label>
+            <label className="form-label">{t('lbl_acc_type')}</label>
             <select className="form-control" value={form.type} onChange={f('type')}>
               {Object.entries(TYPE_LABEL).map(([k,v]) => <option key={k} value={k}>{v}</option>)}
             </select>
           </div>
-          <div className="form-group"><label className="form-label">الرصيد الابتدائي</label><input type="number" className="form-control" value={form.balance} onChange={f('balance')} /></div>
+          <div className="form-group"><label className="form-label">{t('lbl_opening_balance')}</label><input type="number" className="form-control" value={form.balance} onChange={f('balance')} /></div>
         </div>
       </Modal>
     </div>

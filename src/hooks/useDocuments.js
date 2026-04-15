@@ -1,10 +1,14 @@
 import { useState, useCallback, useRef } from 'react'
-import { dbGet, dbGetAll, dbPut } from '../lib/db'
 import { supabase } from '../lib/supabase'
 import { DOC_TYPES } from '../lib/constants'
+import { useLang } from '../contexts/LangContext'
 import { notify } from '../utils/notify'
 
-export function useDocuments() {
+// doc types that increase stock (purchases / sales-return)
+const STOCK_IN = ['purchases', 'sales-return']
+
+export function useDocuments(companyId) {
+  const { t } = useLang()
   const [docType, setDocType] = useState('invoices')
   const [docId, setDocId] = useState(null)
   const [docMeta, setDocMeta] = useState({
@@ -24,48 +28,79 @@ export function useDocuments() {
     setDocType(type)
     setDocId(editId)
 
-    const [items, all] = await Promise.all([
-      dbGetAll('items'),
-      editId ? dbGet(cfg.store, editId) : Promise.resolve(null),
-    ])
-    setAllItems(items)
+    const itemsPromise = companyId
+      ? supabase.from('items').select('*').eq('company_id', companyId).order('created_at', { ascending: true })
+      : Promise.resolve({ data: [] })
+
+    const docPromise = editId
+      ? supabase.from('invoices').select('*, invoice_items(*)').eq('id', editId).single()
+      : Promise.resolve({ data: null })
+
+    const [{ data: itemsData }, { data: docData }] = await Promise.all([itemsPromise, docPromise])
+
+    // Cloud: cost_price / selling_price
+    const mappedItems = (itemsData || []).map(r => ({
+      ...r,
+      cost: r.cost_price,
+      price: r.selling_price,
+      minStock: r.min_stock,
+      desc: r.description,
+    }))
+    setAllItems(mappedItems)
 
     let number
-    if (editId && all) {
-      number = all.number
+    if (editId && docData) {
+      number = docData.number
     } else {
-      const existing = await dbGetAll(cfg.store)
-      number = `${cfg.prefix}-2026-${String(existing.length + 1).padStart(3, '0')}`
+      const { count } = await supabase
+        .from('invoices')
+        .select('*', { count: 'exact', head: true })
+        .eq('company_id', companyId)
+        .eq('doc_type', type)
+      number = `${cfg.prefix}-2026-${String((count || 0) + 1).padStart(3, '0')}`
     }
 
     const today = new Date().toISOString().split('T')[0]
     setDocMeta({
       number,
-      party: all?.party || '',
-      date: all?.date || today,
-      dueDate: all?.dueDate || '',
-      warehouse: all?.warehouse || 'المخزن الرئيسي',
-      status: all?.status || 'unpaid',
-      discount: all?.discount ?? 0,
-      tax: all?.tax ?? 11,
-      notes: all?.notes || '',
+      party: docData?.customer_name || '',   // cloud uses customer_name
+      date: docData?.date || today,
+      dueDate: docData?.due_date || '',
+      warehouse: docData?.warehouse || 'المخزن الرئيسي',
+      status: docData?.status || 'unpaid',
+      discount: docData?.discount ?? 0,
+      tax: docData?.tax ?? 11,
+      notes: docData?.notes || '',
     })
 
-    if (all?.items?.length) {
-      setDocItems(all.items.map(it => ({ ...it, _rowId: it._rowId || 'r' + (++rowCounter.current) })))
+    if (docData?.invoice_items?.length) {
+      setDocItems(docData.invoice_items.map(it => ({
+        _rowId: 'r' + (++rowCounter.current),
+        itemId: it.item_id,
+        itemCode: '',
+        itemName: it.item_name || '',
+        qty: it.quantity,          // cloud: quantity
+        price: it.unit_price,
+        discount: it.discount,
+        total: it.total,
+      })))
     } else {
-      const newRow = { _rowId: 'r' + (++rowCounter.current), itemId: null, itemName: '', qty: 1, price: 0, discount: 0, total: 0 }
-      setDocItems([newRow])
+      setDocItems([{ _rowId: 'r' + (++rowCounter.current), itemId: null, itemName: '', qty: 1, price: 0, discount: 0, total: 0 }])
     }
 
-    // Load party cache from Supabase
     setLoading(false)
-  }, [])
+  }, [companyId])
 
-  const loadPartyCache = useCallback(async (companyId) => {
-    if (!companyId) return
-    const { data } = await supabase.from('accounts').select('id,name,code').eq('company_id', companyId)
-    setPartyCache(data || [])
+  const loadPartyCache = useCallback(async (cid) => {
+    if (!cid) return
+    const [{ data: custs }, { data: supps }] = await Promise.all([
+      supabase.from('customers').select('id,name').eq('company_id', cid),
+      supabase.from('suppliers').select('id,name').eq('company_id', cid),
+    ])
+    setPartyCache([
+      ...(custs || []).map(c => ({ ...c, code: '' })),
+      ...(supps || []).map(s => ({ ...s, code: '' })),
+    ])
   }, [])
 
   function addRow() {
@@ -100,7 +135,6 @@ export function useDocuments() {
     setDocMeta(prev => ({ ...prev, [field]: value }))
   }
 
-  // Computed totals
   const subtotal = docItems.reduce((s, r) => s + (r.total || 0), 0)
   const discount = parseFloat(docMeta.discount) || 0
   const tax = parseFloat(docMeta.tax) || 0
@@ -108,17 +142,30 @@ export function useDocuments() {
   const total = afterDisc * (1 + tax / 100)
   const totalQty = docItems.reduce((s, r) => s + (parseFloat(r.qty) || 0), 0)
 
+  async function applyStockChanges(items, type, direction) {
+    const increase = STOCK_IN.includes(type) ? direction > 0 : direction < 0
+    for (const it of items) {
+      if (!it.item_id || !it.qty) continue
+      const { data: cur } = await supabase.from('items').select('stock').eq('id', it.item_id).single()
+      if (!cur) continue
+      const delta = increase ? Math.abs(it.qty) : -Math.abs(it.qty)
+      await supabase.from('items').update({ stock: (cur.stock || 0) + delta }).eq('id', it.item_id)
+    }
+  }
+
   async function saveDoc() {
     if (!docMeta.party) {
-      const cfg = DOC_TYPES[docType]
-      notify('الرجاء اختيار ' + cfg.partyLabel_ar, 'error')
+      notify(t('doc_party_required') + ' ' + (DOC_TYPES[docType]?.partyLabel_ar || ''), 'error')
       return
     }
-    const data = {
+
+    const invoiceData = {
+      company_id: companyId,
+      doc_type: docType,
       number: docMeta.number,
-      party: docMeta.party,
+      customer_name: docMeta.party,   // map party → customer_name
       date: docMeta.date,
-      dueDate: docMeta.dueDate,
+      due_date: docMeta.dueDate || null,
       warehouse: docMeta.warehouse,
       status: docMeta.status,
       subtotal,
@@ -126,15 +173,56 @@ export function useDocuments() {
       tax,
       total: +total.toFixed(2),
       notes: docMeta.notes,
-      items: docItems.map(r => ({ ...r })),
-      docType,
     }
-    if (docId !== null) data.id = docId
-    const savedId = await dbPut(DOC_TYPES[docType].store, data)
-    notify('تم حفظ المستند بنجاح ✓')
-    // Reload for edit mode
-    const realId = docId || savedId
-    setTimeout(() => loadDoc(docType, realId), 300)
+
+    let invoiceUuid = docId
+
+    if (docId) {
+      // Revert old stock
+      const { data: oldItems } = await supabase.from('invoice_items').select('item_id, quantity').eq('invoice_id', docId)
+      if (oldItems?.length) {
+        await applyStockChanges(oldItems.map(i => ({ item_id: i.item_id, qty: i.quantity })), docType, -1)
+      }
+      await supabase.from('invoices').update(invoiceData).eq('id', docId)
+      await supabase.from('invoice_items').delete().eq('invoice_id', docId)
+      await supabase.from('stock_movements').delete().eq('invoice_id', docId)
+    } else {
+      const { data: newInv } = await supabase.from('invoices').insert(invoiceData).select().single()
+      invoiceUuid = newInv.id
+    }
+
+    const newLineItems = docItems
+      .filter(r => r.itemName || r.itemId)
+      .map(r => ({
+        invoice_id: invoiceUuid,
+        company_id: companyId,
+        item_id: r.itemId || null,
+        item_name: r.itemName,
+        quantity: parseFloat(r.qty) || 0,    // cloud: quantity
+        unit_price: parseFloat(r.price) || 0,
+        discount: parseFloat(r.discount) || 0,
+        total: parseFloat(r.total) || 0,
+      }))
+
+    if (newLineItems.length) {
+      await supabase.from('invoice_items').insert(newLineItems)
+      await applyStockChanges(newLineItems.map(i => ({ item_id: i.item_id, qty: i.quantity })), docType, 1)
+
+      const movements = newLineItems
+        .filter(i => i.item_id)
+        .map(i => ({
+          company_id: companyId,
+          item_id: i.item_id,
+          invoice_id: invoiceUuid,    // cloud: invoice_id (not document_id)
+          movement_type: docType,
+          qty: i.quantity,
+          date: docMeta.date,
+        }))
+      if (movements.length) await supabase.from('stock_movements').insert(movements)
+    }
+
+    notify(t('notify_doc_saved'))
+    setTimeout(() => loadDoc(docType, invoiceUuid), 300)
   }
 
   return {

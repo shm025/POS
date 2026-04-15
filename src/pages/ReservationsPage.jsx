@@ -1,17 +1,24 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { useLang } from '../contexts/LangContext'
 import { useReservations } from '../hooks/useReservations'
 import { supabase } from '../lib/supabase'
 import Modal from '../components/common/Modal'
 import { fmt } from '../utils/format'
 
-const STATUS_LABEL = { pending:'قيد الانتظار', confirmed:'مؤكد', done:'منجز', cancelled:'ملغى' }
-const STATUS_BADGE = { pending:'badge-warning', confirmed:'badge-info', done:'badge-success', cancelled:'badge-danger' }
+const STATUS_BADGE = { pending:'badge-warning', confirmed:'badge-info', done:'badge-success', cancelled:'badge-danger', no_show:'badge-danger' }
+const SOURCE_LABEL = { walk_in:'حضور مباشر', phone:'هاتف', whatsapp:'واتساب', online:'أونلاين' }
 const today = () => new Date().toISOString().split('T')[0]
-const EMPTY_FORM = { customer_name:'', customer_phone:'', service_id:'', service_name:'', employee_id:'', employee_name:'', price:0, date:today(), time:'', status:'pending', notes:'' }
+const EMPTY_FORM = {
+  customer_name:'', customer_phone:'', service_id:'', service_name:'',
+  employee_id:'', employee_name:'', price:0, date:today(), time:'', end_time:'',
+  status:'pending', source:'walk_in', deposit_amount:0, deposit_paid:false,
+  no_show:false, notes:'',
+}
 
 export default function ReservationsPage() {
   const { company } = useAuth()
+  const { t } = useLang()
   const { reservations, loading, loadReservations, saveReservation, markDone, deleteReservation } = useReservations(company?.id)
   const [services, setServices] = useState([])
   const [employees, setEmployees] = useState([])
@@ -22,13 +29,15 @@ export default function ReservationsPage() {
   const [form, setForm] = useState(EMPTY_FORM)
   const [editId, setEditId] = useState(null)
 
+  const STATUS_LABEL = { pending: t('res_pending'), confirmed: t('res_confirmed'), done: t('res_done'), cancelled: t('res_cancelled') }
+
   useEffect(() => {
     loadReservations({ statusFilter, dateFilter })
-  }, [company?.id, statusFilter, dateFilter])
+  }, [company?.id, statusFilter, dateFilter, loadReservations])
 
   useEffect(() => {
     if (!company?.id) return
-    supabase.from('services').select('*').eq('company_id', company.id).eq('active', true).then(({ data }) => setServices(data || []))
+    supabase.from('services').select('*').eq('company_id', company.id).eq('is_active', true).then(({ data }) => setServices(data || []))
     supabase.from('employees').select('*').eq('company_id', company.id).eq('active', true).then(({ data }) => setEmployees(data || []))
   }, [company?.id])
 
@@ -52,7 +61,15 @@ export default function ReservationsPage() {
   }
 
   function openEdit(r) {
-    setForm({ customer_name:r.customer_name, customer_phone:r.customer_phone||'', service_id:r.service_id||'', service_name:r.service_name||'', employee_id:r.employee_id||'', employee_name:r.employee_name||'', price:r.price||0, date:r.date||today(), time:r.time||'', status:r.status, notes:r.notes||'' })
+    setForm({
+      customer_name: r.customer_name, customer_phone: r.customer_phone||'',
+      service_id: r.service_id||'', service_name: r.service_name||'',
+      employee_id: r.employee_id||'', employee_name: r.employee_name||'',
+      price: r.price||0, date: r.date||today(), time: r.time||'', end_time: r.end_time||'',
+      status: r.status, source: r.source||'walk_in',
+      deposit_amount: r.deposit_amount||0, deposit_paid: r.deposit_paid||false,
+      no_show: r.no_show||false, notes: r.notes||'',
+    })
     setEditId(r.id)
     setModal(true)
   }
@@ -67,7 +84,7 @@ export default function ReservationsPage() {
       employee_name: emp ? emp.name : (form.employee_name || null),
       price: parseFloat(form.price) || 0,
     }
-    await saveReservation(data, editId)
+    await saveReservation(data, editId, { statusFilter, dateFilter })
     setModal(false)
   }
 
@@ -86,31 +103,31 @@ export default function ReservationsPage() {
   return (
     <div className="page-view">
       <div className="flex-between mb-4">
-        <h1 style={{ fontSize:'20px', fontWeight:900, color:'var(--primary)' }}>📅 الحجوزات</h1>
-        <button className="btn btn-primary" onClick={openNew}>📅 حجز جديد</button>
+        <h1 style={{ fontSize:'20px', fontWeight:900, color:'var(--primary)' }}>📅 {t('reservations_title')}</h1>
+        <button className="btn btn-primary" onClick={openNew}>📅 {t('new_reservation_title')}</button>
       </div>
       <div className="card">
         <div className="search-bar no-print" style={{ display:'flex', gap:'8px', flexWrap:'wrap' }}>
-          <input className="form-control" placeholder="🔍 بحث باسم العميل..." value={search} onChange={e => setSearch(e.target.value)} style={{ flex:1, minWidth:'160px' }} />
+          <input className="form-control" placeholder={`🔍 ${t('search_customer')}`} value={search} onChange={e => setSearch(e.target.value)} style={{ flex:1, minWidth:'160px' }} />
           <select className="form-control" value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ width:'160px' }}>
-            <option value="">كل الحالات</option>
-            <option value="pending">قيد الانتظار</option>
-            <option value="confirmed">مؤكد</option>
-            <option value="done">منجز</option>
-            <option value="cancelled">ملغى</option>
+            <option value="">{t('all_statuses')}</option>
+            <option value="pending">{t('res_pending')}</option>
+            <option value="confirmed">{t('res_confirmed')}</option>
+            <option value="done">{t('res_done')}</option>
+            <option value="cancelled">{t('res_cancelled')}</option>
           </select>
           <input type="date" className="form-control" value={dateFilter} onChange={e => setDateFilter(e.target.value)} style={{ width:'160px' }} />
         </div>
         <div className="table-wrapper">
           <table>
             <thead>
-              <tr><th>العميل</th><th>الهاتف</th><th>الخدمة</th><th>الحلاق</th><th>التاريخ</th><th>الوقت</th><th>السعر</th><th>الحالة</th><th className="no-print">إجراء</th></tr>
+              <tr><th>{t('th_res_customer')}</th><th>{t('th_phone')}</th><th>{t('th_res_service')}</th><th>{t('th_res_employee')}</th><th>{t('th_date')}</th><th>{t('th_res_time')}</th><th>{t('th_res_price')}</th><th>{t('th_status')}</th><th className="no-print">{t('th_action')}</th></tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr><td colSpan="9" style={{ textAlign:'center', padding:'20px' }}><div className="loading-spinner"></div></td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan="9"><div className="empty-state"><div className="icon">📅</div><p>لا توجد حجوزات</p></div></td></tr>
+                <tr><td colSpan="9"><div className="empty-state"><div className="icon">📅</div><p>{t('no_reservations')}</p></div></td></tr>
               ) : filtered.map(r => (
                 <tr key={r.id}>
                   <td style={{ fontWeight:600 }}>{r.customer_name}</td>
@@ -123,8 +140,8 @@ export default function ReservationsPage() {
                   <td><span className={`badge ${STATUS_BADGE[r.status]||'badge-secondary'}`}>{STATUS_LABEL[r.status]||r.status}</span></td>
                   <td className="no-print">
                     <button className="btn btn-sm btn-outline" onClick={() => openEdit(r)}>✏️</button>
-                    <button className="btn btn-sm btn-success btn-sm" style={{ marginRight:'4px' }} onClick={() => markDone(r.id)}>✅</button>
-                    <button className="btn btn-sm btn-danger" style={{ marginRight:'4px' }} onClick={() => deleteReservation(r.id)}>🗑</button>
+                    <button className="btn btn-sm btn-success btn-sm" style={{ marginRight:'4px' }} onClick={() => markDone(r.id, { statusFilter, dateFilter })}>✅</button>
+                    <button className="btn btn-sm btn-danger" style={{ marginRight:'4px' }} onClick={() => deleteReservation(r.id, { statusFilter, dateFilter })}>🗑</button>
                   </td>
                 </tr>
               ))}
@@ -133,59 +150,84 @@ export default function ReservationsPage() {
         </div>
       </div>
 
-      <Modal isOpen={modal} onClose={() => setModal(false)} title={editId ? '✏️ تعديل الحجز' : '📅 حجز جديد'} footer={
+      <Modal isOpen={modal} onClose={() => setModal(false)} title={editId ? `✏️ ${t('edit_reservation_title')}` : `📅 ${t('new_reservation_title')}`} footer={
         <>
-          <button className="btn btn-primary" onClick={handleSave}>💾 حفظ</button>
-          <button className="btn btn-outline" onClick={() => setModal(false)}>إلغاء</button>
+          <button className="btn btn-primary" onClick={handleSave}>💾 {t('save_btn')}</button>
+          <button className="btn btn-outline" onClick={() => setModal(false)}>{t('cancel_btn')}</button>
         </>
       }>
         <div className="grid-2">
           <div className="form-group">
-            <label className="form-label">اسم العميل</label>
+            <label className="form-label">{t('lbl_customer_name')}</label>
             <input className="form-control" value={form.customer_name} onChange={e => set('customer_name', e.target.value)} />
           </div>
           <div className="form-group">
-            <label className="form-label">الهاتف</label>
+            <label className="form-label">{t('lbl_phone')}</label>
             <input className="form-control" value={form.customer_phone} onChange={e => set('customer_phone', e.target.value)} />
           </div>
           <div className="form-group">
-            <label className="form-label">الخدمة</label>
+            <label className="form-label">{t('lbl_service')}</label>
             <select className="form-control" value={form.service_id} onChange={e => handleSvcChange(e.target.value)}>
-              <option value="">-- اختر خدمة --</option>
+              <option value="">{t('select_service')}</option>
               {services.map(s => <option key={s.id} value={s.id}>{s.name} - ${fmt(s.base_price)}</option>)}
             </select>
           </div>
           <div className="form-group">
-            <label className="form-label">الحلاق</label>
+            <label className="form-label">{t('lbl_employee')}</label>
             <select className="form-control" value={form.employee_id} onChange={e => handleEmpChange(e.target.value)}>
-              <option value="">-- اختر حلاق --</option>
+              <option value="">{t('select_employee')}</option>
               {employees.map(e => <option key={e.id} value={e.id}>{e.name} ({e.level})</option>)}
             </select>
           </div>
           <div className="form-group">
-            <label className="form-label">التاريخ</label>
+            <label className="form-label">{t('lbl_date')}</label>
             <input type="date" className="form-control" value={form.date} onChange={e => set('date', e.target.value)} />
           </div>
           <div className="form-group">
-            <label className="form-label">الوقت</label>
+            <label className="form-label">وقت البدء</label>
             <input type="time" className="form-control" value={form.time} onChange={e => set('time', e.target.value)} />
           </div>
           <div className="form-group">
-            <label className="form-label">السعر ($)</label>
+            <label className="form-label">وقت الانتهاء</label>
+            <input type="time" className="form-control" value={form.end_time} onChange={e => set('end_time', e.target.value)} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">{t('lbl_price')}</label>
             <input type="number" className="form-control" value={form.price} onChange={e => set('price', e.target.value)} step="0.01" />
           </div>
           <div className="form-group">
-            <label className="form-label">الحالة</label>
+            <label className="form-label">مصدر الحجز</label>
+            <select className="form-control" value={form.source} onChange={e => set('source', e.target.value)}>
+              {Object.entries(SOURCE_LABEL).map(([k,v]) => <option key={k} value={k}>{v}</option>)}
+            </select>
+          </div>
+          <div className="form-group">
+            <label className="form-label">عربون ($)</label>
+            <input type="number" className="form-control" value={form.deposit_amount} onChange={e => set('deposit_amount', e.target.value)} step="0.01" />
+          </div>
+          <div className="form-group">
+            <label className="form-label">{t('lbl_status')}</label>
             <select className="form-control" value={form.status} onChange={e => set('status', e.target.value)}>
-              <option value="pending">قيد الانتظار</option>
-              <option value="confirmed">مؤكد</option>
-              <option value="done">منجز</option>
-              <option value="cancelled">ملغى</option>
+              <option value="pending">{t('res_pending')}</option>
+              <option value="confirmed">{t('res_confirmed')}</option>
+              <option value="done">{t('res_done')}</option>
+              <option value="cancelled">{t('res_cancelled')}</option>
+              <option value="no_show">لم يحضر</option>
             </select>
           </div>
         </div>
+        <div style={{ display:'flex', gap:'16px', marginBottom:'8px' }}>
+          <label style={{ display:'flex', alignItems:'center', gap:'6px', fontSize:'13px' }}>
+            <input type="checkbox" checked={form.deposit_paid} onChange={e => set('deposit_paid', e.target.checked)} />
+            تم دفع العربون
+          </label>
+          <label style={{ display:'flex', alignItems:'center', gap:'6px', fontSize:'13px' }}>
+            <input type="checkbox" checked={form.no_show} onChange={e => set('no_show', e.target.checked)} />
+            لم يحضر (no-show)
+          </label>
+        </div>
         <div className="form-group">
-          <label className="form-label">ملاحظات</label>
+          <label className="form-label">{t('lbl_notes')}</label>
           <textarea className="form-control" rows="2" value={form.notes} onChange={e => set('notes', e.target.value)} />
         </div>
       </Modal>

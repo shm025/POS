@@ -1,21 +1,31 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
+import { useLang } from '../../contexts/LangContext'
 import { SIDEBAR_MENUS } from '../../lib/constants'
 
-export default function Sidebar() {
+const PAGE_KEY = {
+  dashboard: 'nav_dashboard', services: 'nav_services', employees: 'nav_employees',
+  reservations: 'nav_reservations', invoices: 'nav_invoices', 'invoices-list': 'nav_inv_list',
+  'sales-return': 'nav_sales_return', orders: 'nav_orders', purchases: 'nav_purchases_inv',
+  'purchases-list': 'nav_pur_list', 'purchases-return': 'nav_purchases_return',
+  items: 'nav_items', 'stock-report': 'nav_stock_report', warehouse: 'nav_warehouse',
+  accounts: 'nav_accounts', 'account-ledger': 'nav_ledger', 'trial-balance': 'nav_trial_balance',
+  'journal-entries': 'nav_journal_entries', supplies: 'nav_supplies', bills: 'nav_bills',
+  'receipt-voucher': 'nav_receipt', 'payment-voucher': 'nav_payment',
+  'company-settings': 'nav_company_settings',
+}
+
+export default function Sidebar({ isOpen, onClose }) {
   const { company, logout } = useAuth()
+  const { t } = useLang()
   const navigate = useNavigate()
   const location = useLocation()
 
-  const businessType = company?.business_type || 'auto_parts'
-  const items = SIDEBAR_MENUS[businessType] || SIDEBAR_MENUS.auto_parts
+  const businessType = company?.business_type || 'retail'
+  const items = SIDEBAR_MENUS[businessType] || SIDEBAR_MENUS.retail
   const year = new Date().getFullYear()
 
-  const businessLabel = {
-    barber: 'صالون حلاقة',
-    auto_parts: 'قطع غيار سيارات',
-    building_materials: 'مواد بناء',
-  }
+  const bizLabel = { barber: t('biz_barber'), retail: t('biz_retail') }
 
   function isActive(page) {
     const path = location.pathname.replace('/', '')
@@ -23,11 +33,16 @@ export default function Sidebar() {
     return path === page || path.startsWith(page + '/')
   }
 
+  function handleNav(page) {
+    navigate('/' + page)
+    onClose?.()
+  }
+
   return (
-    <div className="sidebar">
+    <div className={`sidebar${isOpen ? ' open' : ''}`}>
       <div className="sidebar-logo">
         <h2>{company?.name || 'CATALAN POS'}</h2>
-        <p>{businessLabel[businessType] || ''}</p>
+        <p>{bizLabel[businessType] || ''}</p>
       </div>
 
       <div className="period-badge">
@@ -38,26 +53,19 @@ export default function Sidebar() {
         <div
           key={item.page}
           className={`nav-item${isActive(item.page) ? ' active' : ''}`}
-          onClick={() => navigate('/' + item.page)}
+          onClick={() => handleNav(item.page)}
         >
           <span className="nav-icon">{item.icon}</span>
-          <span>{item.label}</span>
+          <span>{t(PAGE_KEY[item.page] || item.page)}</span>
         </div>
       ))}
 
       <div className="sidebar-logout" style={{ marginTop: 'auto', padding: '16px' }}>
         <button
           onClick={logout}
-          style={{
-            width: '100%', padding: '10px',
-            background: 'rgba(255,255,255,0.06)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: '8px', color: 'rgba(255,255,255,0.6)',
-            cursor: 'pointer', fontFamily: "'Cairo',sans-serif",
-            fontSize: '13px', fontWeight: 600,
-          }}
+          className="sidebar-logout-btn"
         >
-          🚪 تسجيل الخروج
+          🚪 {t('logout')}
         </button>
       </div>
     </div>
