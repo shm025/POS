@@ -1,22 +1,24 @@
 import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { useLang } from '../contexts/LangContext'
 import { useItems } from '../hooks/useItems'
 import { useCustomers } from '../hooks/useCustomers'
 import { processCheckout } from '../lib/checkout'
 import { formatCurrency, fmt, fmtInt } from '../utils/format'
 import { notify } from '../utils/notify'
 
-const PAYMENT_METHODS = [
-  { value: 'cash_usd', label: 'كاش USD' },
-  { value: 'cash_lbp', label: 'كاش LBP' },
-  { value: 'card', label: 'بطاقة' },
-  { value: 'loyalty', label: 'نقاط' },
-]
-
 export default function POSPage() {
   const { company, profile } = useAuth()
+  const { t } = useLang()
   const { searchItems } = useItems(company?.id)
   const { searchByPhone } = useCustomers(company?.id)
+
+  const PAYMENT_METHODS = [
+    { value: 'cash_usd', label: t('pay_cash_usd') },
+    { value: 'cash_lbp', label: t('pay_cash_lbp') },
+    { value: 'card',     label: t('pay_card') },
+    { value: 'loyalty',  label: t('pay_loyalty') },
+  ]
 
   const exchangeRate = company?.exchange_rate || 89500
 
@@ -42,22 +44,22 @@ export default function POSPage() {
   // Auto-search items
   useEffect(() => {
     if (!query || query.length < 1) { setResults([]); return }
-    const t = setTimeout(async () => {
+    const timer = setTimeout(async () => {
       const data = await searchItems(query)
       setResults(data)
     }, 200)
-    return () => clearTimeout(t)
-  }, [query])
+    return () => clearTimeout(timer)
+  }, [query, searchItems])
 
   // Customer phone search
   useEffect(() => {
     if (!customerPhone || customerPhone.length < 3) { setCustomerResults([]); return }
-    const t = setTimeout(async () => {
+    const timer = setTimeout(async () => {
       const data = await searchByPhone(customerPhone)
       setCustomerResults(data)
     }, 300)
-    return () => clearTimeout(t)
-  }, [customerPhone])
+    return () => clearTimeout(timer)
+  }, [customerPhone, searchByPhone])
 
   function addToCart(item) {
     setCart(prev => {
@@ -116,7 +118,7 @@ export default function POSPage() {
   const changeLBP = Math.max(0, paid_lbp - totalFormatted.lbpRaw)
 
   async function handleCharge() {
-    if (cart.length === 0) { notify('السلة فارغة', 'error'); return }
+    if (cart.length === 0) { notify(t('pos_cart_empty_error'), 'error'); return }
     setProcessing(true)
     try {
       const result = await processCheckout({
@@ -137,7 +139,7 @@ export default function POSPage() {
         payMethod,
         customer,
         exchangeRate,
-        date: new Date().toLocaleString('ar-LB'),
+        date: new Date().toLocaleString(),
       })
       setCart([])
       setCustomer(null)
@@ -146,7 +148,7 @@ export default function POSPage() {
       setPaidUSD('')
       setPaidLBP('')
     } catch (err) {
-      notify('خطأ في إتمام العملية: ' + err.message, 'error')
+      notify(t('pos_checkout_error') + ': ' + err.message, 'error')
     } finally {
       setProcessing(false)
     }
@@ -163,7 +165,7 @@ export default function POSPage() {
           <input
             ref={searchRef}
             className="form-control"
-            placeholder="🔍 ابحث عن صنف بالاسم أو الباركود..."
+            placeholder={`🔍 ${t('pos_search_placeholder')}`}
             value={query}
             onChange={e => setQuery(e.target.value)}
             style={{ fontSize: '16px', padding: '12px' }}
@@ -190,7 +192,7 @@ export default function POSPage() {
                   <div>
                     <div style={{ fontWeight: 600 }}>{item.name}</div>
                     <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                      {item.barcode || item.code} • مخزون: {item.stock}
+                      {item.barcode || item.code} • {t('pos_stock_label')}: {item.stock}
                     </div>
                   </div>
                   <div style={{ fontWeight: 700, color: 'var(--success)', direction: 'ltr' }}>
@@ -207,17 +209,17 @@ export default function POSPage() {
           {cart.length === 0 ? (
             <div className="empty-state" style={{ padding: '40px' }}>
               <div className="icon">🛒</div>
-              <p>ابحث عن صنف وأضفه إلى السلة</p>
+              <p>{t('pos_empty_cart')}</p>
             </div>
           ) : (
             <table>
               <thead>
                 <tr>
-                  <th>الصنف</th>
-                  <th style={{ width: '90px' }}>الكمية</th>
-                  <th style={{ width: '90px' }}>السعر</th>
-                  <th style={{ width: '80px' }}>خصم%</th>
-                  <th style={{ width: '110px' }}>المجموع</th>
+                  <th>{t('pos_col_item')}</th>
+                  <th style={{ width: '90px' }}>{t('pos_col_qty')}</th>
+                  <th style={{ width: '90px' }}>{t('lbl_price')}</th>
+                  <th style={{ width: '80px' }}>{t('pos_col_discount')}</th>
+                  <th style={{ width: '110px' }}>{t('th_total')}</th>
                   <th style={{ width: '40px' }}></th>
                 </tr>
               </thead>
@@ -267,7 +269,7 @@ export default function POSPage() {
 
         {/* Customer lookup */}
         <div className="card">
-          <div style={{ fontWeight: 700, marginBottom: '8px', fontSize: '14px' }}>👤 العميل</div>
+          <div style={{ fontWeight: 700, marginBottom: '8px', fontSize: '14px' }}>👤 {t('pos_customer_label')}</div>
           {customer ? (
             <div style={{ background: 'var(--bg-panel)', padding: '10px', borderRadius: '8px' }}>
               <div style={{ fontWeight: 700 }}>{customer.name}</div>
@@ -276,15 +278,15 @@ export default function POSPage() {
                 <span className={`badge badge-${customer.loyalty_tier === 'gold' ? 'warning' : customer.loyalty_tier === 'platinum' ? 'success' : 'secondary'}`}>
                   {customer.loyalty_tier}
                 </span>
-                <span style={{ marginRight: '8px' }}>🎯 {fmtInt(customer.loyalty_points)} نقطة</span>
+                <span style={{ marginRight: '8px' }}>🎯 {fmtInt(customer.loyalty_points)} {t('pay_loyalty')}</span>
               </div>
-              <button className="btn btn-sm btn-outline" style={{ marginTop: '6px' }} onClick={() => setCustomer(null)}>✕ إزالة</button>
+              <button className="btn btn-sm btn-outline" style={{ marginTop: '6px' }} onClick={() => setCustomer(null)}>✕</button>
             </div>
           ) : (
             <div style={{ position: 'relative' }}>
               <input
                 className="form-control"
-                placeholder="ابحث برقم الهاتف..."
+                placeholder={t('pos_phone_search')}
                 value={customerPhone}
                 onChange={e => setCustomerPhone(e.target.value)}
                 style={{ fontSize: '13px' }}
@@ -317,11 +319,11 @@ export default function POSPage() {
         <div className="card" style={{ flex: 1 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-              <span>عدد الأصناف</span>
-              <span style={{ fontWeight: 600 }}>{cart.length} صنف / {fmtInt(cart.reduce((s,r)=>s+r.qty,0))} وحدة</span>
+              <span>{t('pos_items_count_label')}</span>
+              <span style={{ fontWeight: 600 }}>{cart.length} {t('pos_item_unit')} / {fmtInt(cart.reduce((s,r)=>s+r.qty,0))} {t('pos_qty_unit')}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '16px', fontWeight: 700, borderTop: '1px solid var(--border)', paddingTop: '10px' }}>
-              <span>الإجمالي</span>
+              <span>{t('th_total')}</span>
               <span style={{ direction: 'ltr', color: 'var(--success)' }}>{totalFormatted.usd}</span>
             </div>
             <div style={{ textAlign: 'left', fontSize: '13px', color: 'var(--text-muted)', direction: 'ltr' }}>
@@ -337,7 +339,7 @@ export default function POSPage() {
           onClick={() => setShowPayment(true)}
           disabled={cart.length === 0}
         >
-          💳 تحصيل {totalFormatted.usd}
+          💳 {t('pos_charge_btn')} {totalFormatted.usd}
         </button>
       </div>
 
@@ -348,7 +350,7 @@ export default function POSPage() {
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           <div className="card" style={{ width: '400px', padding: '24px' }}>
-            <h2 style={{ fontWeight: 900, marginBottom: '16px', fontSize: '18px' }}>💳 الدفع</h2>
+            <h2 style={{ fontWeight: 900, marginBottom: '16px', fontSize: '18px' }}>💳 {t('pos_payment_title')}</h2>
 
             <div style={{ background: 'var(--bg-panel)', padding: '12px', borderRadius: '8px', marginBottom: '16px', textAlign: 'center' }}>
               <div style={{ fontSize: '28px', fontWeight: 900, color: 'var(--success)', direction: 'ltr' }}>{totalFormatted.usd}</div>
@@ -356,7 +358,7 @@ export default function POSPage() {
             </div>
 
             <div className="form-group">
-              <label className="form-label">طريقة الدفع</label>
+              <label className="form-label">{t('pos_pay_method_label')}</label>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {PAYMENT_METHODS.map(m => (
                   <button
@@ -373,7 +375,7 @@ export default function POSPage() {
 
             {(payMethod === 'cash_usd' || payMethod === 'card') && (
               <div className="form-group">
-                <label className="form-label">المبلغ المدفوع (USD)</label>
+                <label className="form-label">{t('pos_paid_usd_label')}</label>
                 <input
                   type="number" className="form-control"
                   value={paidUSD} onChange={e => setPaidUSD(e.target.value)}
@@ -383,7 +385,7 @@ export default function POSPage() {
                 />
                 {paid_usd > subtotal && (
                   <div style={{ color: 'var(--success)', fontWeight: 700, marginTop: '6px', textAlign: 'center' }}>
-                    الباقي: {change.usd} / {change.lbp}
+                    {t('pos_change_label')}: {change.usd} / {change.lbp}
                   </div>
                 )}
               </div>
@@ -391,7 +393,7 @@ export default function POSPage() {
 
             {payMethod === 'cash_lbp' && (
               <div className="form-group">
-                <label className="form-label">المبلغ المدفوع (LBP)</label>
+                <label className="form-label">{t('pos_paid_lbp_label')}</label>
                 <input
                   type="number" className="form-control"
                   value={paidLBP} onChange={e => setPaidLBP(e.target.value)}
@@ -401,7 +403,7 @@ export default function POSPage() {
                 />
                 {changeLBP > 0 && (
                   <div style={{ color: 'var(--success)', fontWeight: 700, marginTop: '6px', textAlign: 'center' }}>
-                    الباقي: {formatCurrency(changeLBP / exchangeRate, exchangeRate).lbp}
+                    {t('pos_change_label')}: {formatCurrency(changeLBP / exchangeRate, exchangeRate).lbp}
                   </div>
                 )}
               </div>
@@ -414,9 +416,9 @@ export default function POSPage() {
                 onClick={handleCharge}
                 disabled={processing}
               >
-                {processing ? 'جاري المعالجة...' : '✅ تأكيد الدفع'}
+                {processing ? t('pos_processing') : `✅ ${t('pos_confirm_pay')}`}
               </button>
-              <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => setShowPayment(false)}>إلغاء</button>
+              <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => setShowPayment(false)}>{t('cancel_btn')}</button>
             </div>
           </div>
         </div>
@@ -431,7 +433,7 @@ export default function POSPage() {
           <div className="card" style={{ width: '380px', padding: '24px', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ textAlign: 'center', marginBottom: '16px' }}>
               <div style={{ fontSize: '32px' }}>✅</div>
-              <div style={{ fontWeight: 900, fontSize: '18px', color: 'var(--success)' }}>تمت العملية بنجاح</div>
+              <div style={{ fontWeight: 900, fontSize: '18px', color: 'var(--success)' }}>{t('pos_success_title')}</div>
               <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{receipt.date}</div>
             </div>
 
@@ -440,7 +442,7 @@ export default function POSPage() {
                 <strong>{receipt.customer.name}</strong>
                 {receipt.points_earned > 0 && (
                   <div style={{ color: 'var(--success)', marginTop: '4px' }}>
-                    🎯 +{fmtInt(receipt.points_earned)} نقطة مكتسبة
+                    🎯 +{fmtInt(receipt.points_earned)} {t('pos_points_earned_label')}
                   </div>
                 )}
               </div>
@@ -456,7 +458,7 @@ export default function POSPage() {
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 900, fontSize: '16px', marginBottom: '8px' }}>
-              <span>الإجمالي</span>
+              <span>{t('th_total')}</span>
               <span style={{ direction: 'ltr' }}>{formatCurrency(receipt.subtotal, receipt.exchangeRate).usd}</span>
             </div>
             <div style={{ textAlign: 'left', fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px', direction: 'ltr' }}>
@@ -464,8 +466,8 @@ export default function POSPage() {
             </div>
 
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => window.print()}>🖨 طباعة</button>
-              <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => setReceipt(null)}>إغلاق</button>
+              <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => window.print()}>🖨 {t('print_btn')}</button>
+              <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => setReceipt(null)}>{t('cancel_btn')}</button>
             </div>
           </div>
         </div>

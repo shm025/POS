@@ -1,12 +1,14 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import { useLang } from '../contexts/LangContext'
 import { notify } from '../utils/notify'
 
 export function useServices(companyId) {
+  const { t } = useLang()
   const [services, setServices] = useState([])
   const [loading, setLoading] = useState(false)
 
-  async function loadServices() {
+  const loadServices = useCallback(async () => {
     if (!companyId) return
     setLoading(true)
     const { data } = await supabase
@@ -16,25 +18,28 @@ export function useServices(companyId) {
       .order('created_at', { ascending: true })
     setServices(data || [])
     setLoading(false)
-  }
+  }, [companyId])
 
-  async function saveService(formData, editId) {
+  const saveService = useCallback(async (formData, editId) => {
     const data = { company_id: companyId, ...formData, active: true }
     if (editId) {
-      await supabase.from('services').update(data).eq('id', editId)
+      const { error } = await supabase.from('services').update(data).eq('id', editId)
+      if (error) { notify(t('save_error') + ': ' + error.message, 'error'); return false }
     } else {
-      await supabase.from('services').insert(data)
+      const { error } = await supabase.from('services').insert(data)
+      if (error) { notify(t('save_error') + ': ' + error.message, 'error'); return false }
     }
-    notify('تم حفظ الخدمة بنجاح')
+    notify(t('notify_saved'))
     await loadServices()
-  }
+    return true
+  }, [companyId, loadServices, t])
 
-  async function deleteService(id) {
-    if (!confirm('هل تريد حذف هذه الخدمة؟')) return
+  const deleteService = useCallback(async (id) => {
+    if (!confirm(t('confirm_delete'))) return
     await supabase.from('services').delete().eq('id', id)
-    notify('تم حذف الخدمة')
+    notify(t('notify_deleted'))
     await loadServices()
-  }
+  }, [loadServices, t])
 
   return { services, loading, loadServices, saveService, deleteService }
 }

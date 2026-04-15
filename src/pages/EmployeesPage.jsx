@@ -34,7 +34,7 @@ export default function EmployeesPage() {
   useEffect(() => {
     loadEmployees()
     loadMonthRes()
-  }, [company?.id])
+  }, [loadEmployees])
 
   async function loadMonthRes() {
     if (!company?.id) return

@@ -1,8 +1,10 @@
 import { useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import { useLang } from '../contexts/LangContext'
 import { notify } from '../utils/notify'
 
 export function useStockMovements(companyId) {
+  const { t } = useLang()
   const [movements, setMovements] = useState([])
   const [loading, setLoading] = useState(false)
 
@@ -25,7 +27,6 @@ export function useStockMovements(companyId) {
     return data || []
   }, [companyId])
 
-  // Manual stock adjustment with audit
   const adjustStock = useCallback(async ({ itemId, qty, reason, userId }) => {
     if (!companyId) return
 
@@ -35,7 +36,7 @@ export function useStockMovements(companyId) {
       .eq('id', itemId)
       .single()
 
-    if (!item) { notify('الصنف غير موجود', 'error'); return }
+    if (!item) { notify(t('notify_item_not_found'), 'error'); return }
 
     const newStock = (item.stock || 0) + qty
     await supabase.from('items').update({ stock: newStock }).eq('id', itemId)
@@ -59,9 +60,9 @@ export function useStockMovements(companyId) {
       new_values: { stock: newStock },
     })
 
-    notify(`تم تعديل مخزون "${item.name}" إلى ${newStock}`)
+    notify(`${t('notify_saved')} — "${item.name}" → ${newStock}`)
     await loadMovements()
-  }, [companyId, loadMovements])
+  }, [companyId, loadMovements, t])
 
   return { movements, loading, loadMovements, adjustStock }
 }

@@ -1,8 +1,10 @@
 import { useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import { useLang } from '../contexts/LangContext'
 import { notify } from '../utils/notify'
 
 export function useCustomers(companyId) {
+  const { t } = useLang()
   const [customers, setCustomers] = useState([])
   const [loading, setLoading] = useState(false)
 
@@ -36,21 +38,22 @@ export function useCustomers(companyId) {
     const data = { company_id: companyId, ...formData }
     if (editId) {
       const { error } = await supabase.from('customers').update(data).eq('id', editId)
-      if (error) { notify('خطأ في الحفظ', 'error'); return }
+      if (error) { notify(t('save_error') + ': ' + error.message, 'error'); return false }
     } else {
       const { error } = await supabase.from('customers').insert(data)
-      if (error) { notify('خطأ في الحفظ', 'error'); return }
+      if (error) { notify(t('save_error') + ': ' + error.message, 'error'); return false }
     }
-    notify('تم حفظ العميل بنجاح')
+    notify(t('notify_saved'))
     await loadCustomers()
-  }, [companyId, loadCustomers])
+    return true
+  }, [companyId, loadCustomers, t])
 
   const deleteCustomer = useCallback(async (id) => {
-    if (!confirm('هل تريد حذف هذا العميل؟')) return
+    if (!confirm(t('confirm_delete'))) return
     await supabase.from('customers').delete().eq('id', id)
-    notify('تم حذف العميل')
+    notify(t('notify_deleted'))
     await loadCustomers()
-  }, [loadCustomers])
+  }, [loadCustomers, t])
 
   const addLoyaltyPoints = useCallback(async (customerId, points, invoiceId, description) => {
     const { data: customer } = await supabase
@@ -89,7 +92,7 @@ export function useCustomers(companyId) {
       .eq('id', customerId)
       .single()
     if (!customer || customer.loyalty_points < points) {
-      notify('رصيد النقاط غير كافٍ', 'error')
+      notify(t('notify_points_insufficient'), 'error')
       return false
     }
     const newBalance = customer.loyalty_points - points
@@ -113,7 +116,7 @@ export function useCustomers(companyId) {
       description: 'استرداد نقاط',
     })
     return true
-  }, [companyId])
+  }, [companyId, t])
 
   return { customers, loading, loadCustomers, searchByPhone, saveCustomer, deleteCustomer, addLoyaltyPoints, redeemPoints }
 }

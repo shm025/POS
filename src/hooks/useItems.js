@@ -1,8 +1,10 @@
 import { useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import { useLang } from '../contexts/LangContext'
 import { notify } from '../utils/notify'
 
 export function useItems(companyId) {
+  const { t } = useLang()
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(false)
 
@@ -53,22 +55,22 @@ export function useItems(companyId) {
     }
     if (editId) {
       const { error } = await supabase.from('items').update(data).eq('id', editId)
-      if (error) { notify('خطأ في الحفظ', 'error'); return }
+      if (error) { notify(t('save_error') + ': ' + error.message, 'error'); return false }
     } else {
       const { error } = await supabase.from('items').insert(data)
-      if (error) { notify('خطأ في الحفظ', 'error'); return }
+      if (error) { notify(t('save_error') + ': ' + error.message, 'error'); return false }
     }
-    notify('تم حفظ الصنف بنجاح')
+    notify(t('notify_saved'))
     await loadItems()
-  }, [companyId, loadItems])
+    return true
+  }, [companyId, loadItems, t])
 
   const deleteItem = useCallback(async (id) => {
-    if (!confirm('هل تريد حذف هذا الصنف؟')) return
-    // Soft delete
+    if (!confirm(t('confirm_delete'))) return
     await supabase.from('items').update({ is_active: false }).eq('id', id)
-    notify('تم حذف الصنف')
+    notify(t('notify_deleted'))
     await loadItems()
-  }, [loadItems])
+  }, [loadItems, t])
 
   const getItem = useCallback(async (id) => {
     const { data } = await supabase.from('items').select('*').eq('id', id).single()

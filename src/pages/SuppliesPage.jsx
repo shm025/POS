@@ -17,7 +17,7 @@ export default function SuppliesPage() {
 
   const CAT_LABEL = { supply: t('cat_supply'), tool: t('cat_tool'), product: t('cat_product'), other: t('cat_other') }
 
-  useEffect(() => { loadSupplies() }, [company?.id])
+  useEffect(() => { loadSupplies() }, [loadSupplies])
 
   const thisMonth = new Date().toISOString().slice(0, 7)
   const totalMonth = supplies.filter(s => s.date?.startsWith(thisMonth)).reduce((s, r) => s + parseFloat(r.amount || 0), 0)

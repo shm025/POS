@@ -1,8 +1,10 @@
 import { useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import { useLang } from '../contexts/LangContext'
 import { notify } from '../utils/notify'
 
 export function useReservations(companyId) {
+  const { t } = useLang()
   const [reservations, setReservations] = useState([])
   const [loading, setLoading] = useState(false)
 
@@ -24,26 +26,29 @@ export function useReservations(companyId) {
   const saveReservation = useCallback(async (formData, editId, filters = {}) => {
     const data = { company_id: companyId, ...formData }
     if (editId) {
-      await supabase.from('reservations').update(data).eq('id', editId)
+      const { error } = await supabase.from('reservations').update(data).eq('id', editId)
+      if (error) { notify(t('save_error') + ': ' + error.message, 'error'); return false }
     } else {
-      await supabase.from('reservations').insert(data)
+      const { error } = await supabase.from('reservations').insert(data)
+      if (error) { notify(t('save_error') + ': ' + error.message, 'error'); return false }
     }
-    notify('تم حفظ الحجز بنجاح')
+    notify(t('notify_reservation_saved'))
     await loadReservations(filters)
-  }, [companyId, loadReservations])
+    return true
+  }, [companyId, loadReservations, t])
 
   const markDone = useCallback(async (id, filters = {}) => {
     await supabase.from('reservations').update({ status: 'done' }).eq('id', id)
-    notify('تم تأكيد إنجاز الحجز ✅')
+    notify(t('notify_reservation_done'))
     await loadReservations(filters)
-  }, [loadReservations])
+  }, [loadReservations, t])
 
   const deleteReservation = useCallback(async (id, filters = {}) => {
-    if (!confirm('هل تريد حذف هذا الحجز؟')) return
+    if (!confirm(t('confirm_delete'))) return
     await supabase.from('reservations').delete().eq('id', id)
-    notify('تم حذف الحجز')
+    notify(t('notify_deleted'))
     await loadReservations(filters)
-  }, [loadReservations])
+  }, [loadReservations, t])
 
   return { reservations, loading, loadReservations, saveReservation, markDone, deleteReservation }
 }
