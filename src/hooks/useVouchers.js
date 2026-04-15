@@ -1,8 +1,10 @@
 import { useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import { useLang } from '../contexts/LangContext'
 import { notify } from '../utils/notify'
 
 export function useVouchers(companyId) {
+  const { t } = useLang()
   const [vouchers, setVouchers] = useState([])
   const [loading, setLoading] = useState(false)
 
@@ -13,7 +15,7 @@ export function useVouchers(companyId) {
       .from('vouchers')
       .select('*')
       .eq('company_id', companyId)
-      .eq('type', type)             // cloud uses 'type' not 'voucher_type'
+      .eq('type', type)
       .order('created_at', { ascending: false })
     setVouchers(data || [])
     setLoading(false)
@@ -21,9 +23,9 @@ export function useVouchers(companyId) {
   }, [companyId])
 
   const saveVoucher = useCallback(async (formData) => {
-    await supabase.from('vouchers').insert({
+    const { error } = await supabase.from('vouchers').insert({
       company_id: companyId,
-      type: formData.type,          // cloud column is 'type'
+      type: formData.type,
       number: formData.number,
       date: formData.date,
       amount: formData.amount,
@@ -31,8 +33,8 @@ export function useVouchers(companyId) {
       description: formData.desc,
       method: formData.method,
     })
-    const typeLabel = formData.type === 'receipt' ? 'القبض' : 'الصرف'
-    notify(`تم حفظ سند ${typeLabel}`)
+    if (error) { notify(t('save_error') + ': ' + error.message, 'error'); return }
+    notify(formData.type === 'receipt' ? t('notify_voucher_receipt') : t('notify_voucher_payment'))
     const { data } = await supabase
       .from('vouchers')
       .select('*')
@@ -40,7 +42,7 @@ export function useVouchers(companyId) {
       .eq('type', formData.type)
       .order('created_at', { ascending: false })
     setVouchers(data || [])
-  }, [companyId])
+  }, [companyId, t])
 
   return { vouchers, loading, loadVouchers, saveVoucher }
 }

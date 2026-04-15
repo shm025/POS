@@ -1,12 +1,14 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import { useLang } from '../contexts/LangContext'
 import { notify } from '../utils/notify'
 
 export function useEmployees(companyId) {
+  const { t } = useLang()
   const [employees, setEmployees] = useState([])
   const [loading, setLoading] = useState(false)
 
-  async function loadEmployees() {
+  const loadEmployees = useCallback(async () => {
     if (!companyId) return
     setLoading(true)
     const { data } = await supabase
@@ -16,9 +18,9 @@ export function useEmployees(companyId) {
       .eq('active', true)
     setEmployees(data || [])
     setLoading(false)
-  }
+  }, [companyId])
 
-  async function saveEmployee(formData, editId) {
+  const saveEmployee = useCallback(async (formData, editId) => {
     const data = {
       company_id: companyId,
       name: formData.name,
@@ -32,20 +34,23 @@ export function useEmployees(companyId) {
       active: true,
     }
     if (editId) {
-      await supabase.from('employees').update(data).eq('id', editId)
+      const { error } = await supabase.from('employees').update(data).eq('id', editId)
+      if (error) { notify(t('save_error') + ': ' + error.message, 'error'); return false }
     } else {
-      await supabase.from('employees').insert(data)
+      const { error } = await supabase.from('employees').insert(data)
+      if (error) { notify(t('save_error') + ': ' + error.message, 'error'); return false }
     }
-    notify('تم حفظ الموظف بنجاح')
+    notify(t('notify_saved'))
     await loadEmployees()
-  }
+    return true
+  }, [companyId, loadEmployees, t])
 
-  async function deleteEmployee(id) {
-    if (!confirm('هل تريد حذف هذا الموظف؟')) return
+  const deleteEmployee = useCallback(async (id) => {
+    if (!confirm(t('confirm_delete'))) return
     await supabase.from('employees').update({ active: false }).eq('id', id)
-    notify('تم حذف الموظف')
+    notify(t('notify_deleted'))
     await loadEmployees()
-  }
+  }, [loadEmployees, t])
 
   return { employees, loading, loadEmployees, saveEmployee, deleteEmployee }
 }

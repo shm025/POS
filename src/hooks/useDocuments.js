@@ -1,12 +1,14 @@
 import { useState, useCallback, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { DOC_TYPES } from '../lib/constants'
+import { useLang } from '../contexts/LangContext'
 import { notify } from '../utils/notify'
 
 // doc types that increase stock (purchases / sales-return)
 const STOCK_IN = ['purchases', 'sales-return']
 
 export function useDocuments(companyId) {
+  const { t } = useLang()
   const [docType, setDocType] = useState('invoices')
   const [docId, setDocId] = useState(null)
   const [docMeta, setDocMeta] = useState({
@@ -153,7 +155,7 @@ export function useDocuments(companyId) {
 
   async function saveDoc() {
     if (!docMeta.party) {
-      notify('الرجاء اختيار ' + (DOC_TYPES[docType]?.partyLabel_ar || 'الطرف'), 'error')
+      notify(t('doc_party_required') + ' ' + (DOC_TYPES[docType]?.partyLabel_ar || ''), 'error')
       return
     }
 
@@ -219,7 +221,7 @@ export function useDocuments(companyId) {
       if (movements.length) await supabase.from('stock_movements').insert(movements)
     }
 
-    notify('تم حفظ المستند بنجاح ✓')
+    notify(t('notify_doc_saved'))
     setTimeout(() => loadDoc(docType, invoiceUuid), 300)
   }
 

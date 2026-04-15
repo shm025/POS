@@ -1,8 +1,10 @@
 import { useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import { useLang } from '../contexts/LangContext'
 import { notify } from '../utils/notify'
 
 export function useAccounts(companyId) {
+  const { t } = useLang()
   const [accounts, setAccounts] = useState([])
   const [loading, setLoading] = useState(false)
 
@@ -30,19 +32,23 @@ export function useAccounts(companyId) {
       credit: balance < 0 ? Math.abs(balance) : 0,
     }
     if (editId) {
-      await supabase.from('accounts').update(data).eq('id', editId)
+      const { error } = await supabase.from('accounts').update(data).eq('id', editId)
+      if (error) { notify(t('save_error') + ': ' + error.message, 'error'); return false }
     } else {
-      await supabase.from('accounts').insert(data)
+      const { error } = await supabase.from('accounts').insert(data)
+      if (error) { notify(t('save_error') + ': ' + error.message, 'error'); return false }
     }
-    notify('تم حفظ الحساب')
+    notify(t('notify_saved'))
     await loadAccounts()
-  }, [companyId, loadAccounts])
+    return true
+  }, [companyId, loadAccounts, t])
 
   const deleteAccount = useCallback(async (id) => {
+    if (!confirm(t('confirm_delete'))) return
     await supabase.from('accounts').delete().eq('id', id)
-    notify('تم حذف الحساب')
+    notify(t('notify_deleted'))
     await loadAccounts()
-  }, [loadAccounts])
+  }, [loadAccounts, t])
 
   return { accounts, loading, loadAccounts, saveAccount, deleteAccount }
 }

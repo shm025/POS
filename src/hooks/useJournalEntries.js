@@ -1,8 +1,8 @@
 import { useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import { useLang } from '../contexts/LangContext'
 import { notify } from '../utils/notify'
 
-// Maps DB snake_case to the shape the pages expect
 const mapEntry = e => ({
   ...e,
   desc: e.description,
@@ -11,6 +11,7 @@ const mapEntry = e => ({
 })
 
 export function useJournalEntries(companyId) {
+  const { t } = useLang()
   const [entries, setEntries] = useState([])
   const [loading, setLoading] = useState(false)
 
@@ -29,7 +30,7 @@ export function useJournalEntries(companyId) {
   }, [companyId])
 
   const saveEntry = useCallback(async (formData) => {
-    await supabase.from('journal_entries').insert({
+    const { error } = await supabase.from('journal_entries').insert({
       company_id: companyId,
       date: formData.date,
       description: formData.desc,
@@ -37,15 +38,18 @@ export function useJournalEntries(companyId) {
       credit_acc_id: formData.creditAccId || null,
       amount: formData.amount,
     })
-    notify('تم حفظ القيد')
+    if (error) { notify(t('save_error') + ': ' + error.message, 'error'); return false }
+    notify(t('notify_saved'))
     await loadEntries()
-  }, [companyId, loadEntries])
+    return true
+  }, [companyId, loadEntries, t])
 
   const deleteEntry = useCallback(async (id) => {
+    if (!confirm(t('confirm_delete'))) return
     await supabase.from('journal_entries').delete().eq('id', id)
-    notify('تم حذف القيد')
+    notify(t('notify_deleted'))
     await loadEntries()
-  }, [loadEntries])
+  }, [loadEntries, t])
 
   return { entries, loading, loadEntries, saveEntry, deleteEntry }
 }

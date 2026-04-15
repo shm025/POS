@@ -15,7 +15,7 @@ export default function ServicesPage() {
   const [form, setForm] = useState(EMPTY_FORM)
   const [editId, setEditId] = useState(null)
 
-  useEffect(() => { loadServices() }, [company?.id])
+  useEffect(() => { loadServices() }, [loadServices])
 
   function openNew() {
     setForm(EMPTY_FORM)
@@ -31,8 +31,8 @@ export default function ServicesPage() {
 
   async function handleSave() {
     if (!form.name.trim()) return
-    await saveService({ ...form, base_price: parseFloat(form.base_price)||0, junior_price: parseFloat(form.junior_price)||0, senior_price: parseFloat(form.senior_price)||0, master_price: parseFloat(form.master_price)||0, duration_minutes: parseInt(form.duration_minutes)||30 }, editId)
-    setModal(false)
+    const ok = await saveService({ ...form, base_price: parseFloat(form.base_price)||0, junior_price: parseFloat(form.junior_price)||0, senior_price: parseFloat(form.senior_price)||0, master_price: parseFloat(form.master_price)||0, duration_minutes: parseInt(form.duration_minutes)||30 }, editId)
+    if (ok) setModal(false)
   }
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))

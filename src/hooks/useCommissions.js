@@ -1,8 +1,10 @@
 import { useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import { useLang } from '../contexts/LangContext'
 import { notify } from '../utils/notify'
 
 export function useCommissions(companyId) {
+  const { t } = useLang()
   const [commissions, setCommissions] = useState([])
   const [loading, setLoading] = useState(false)
 
@@ -25,7 +27,6 @@ export function useCommissions(companyId) {
     return data || []
   }, [companyId])
 
-  // Record a commission from a completed reservation
   const recordCommission = useCallback(async ({ employee, reservation, invoice }) => {
     if (!companyId || !employee || !reservation) return
     const serviceAmount = parseFloat(reservation.price || 0)
@@ -45,19 +46,18 @@ export function useCommissions(companyId) {
       period_end: today,
       paid_out: false,
     })
-    if (error) { notify('خطأ في تسجيل العمولة', 'error'); return }
-    notify('تم تسجيل العمولة')
-  }, [companyId])
+    if (error) { notify(t('notify_commission_error'), 'error'); return }
+    notify(t('notify_commission_saved'))
+  }, [companyId, t])
 
   const markPaid = useCallback(async (ids) => {
     await supabase.from('commissions')
       .update({ paid_out: true, paid_at: new Date().toISOString() })
       .in('id', ids)
-    notify('تم تأكيد صرف العمولات ✅')
+    notify(t('notify_commission_paid'))
     await loadCommissions()
-  }, [loadCommissions])
+  }, [loadCommissions, t])
 
-  // Summary per employee
   const getSummary = useCallback((data) => {
     const map = {}
     ;(data || commissions).forEach(c => {

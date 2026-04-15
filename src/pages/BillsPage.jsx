@@ -15,7 +15,7 @@ export default function BillsPage() {
   const [modal, setModal] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
 
-  useEffect(() => { loadBills() }, [company?.id])
+  useEffect(() => { loadBills() }, [loadBills])
 
   const unpaid = bills.filter(b => !b.paid)
   const totalUnpaid = unpaid.reduce((s, b) => s + parseFloat(b.amount || 0), 0)
