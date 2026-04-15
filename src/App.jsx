@@ -25,6 +25,9 @@ import ReservationsPage from './pages/ReservationsPage'
 import SuppliesPage from './pages/SuppliesPage'
 import BillsPage from './pages/BillsPage'
 import CompanySettingsPage from './pages/CompanySettingsPage'
+import CustomersPage from './pages/CustomersPage'
+import POSPage from './pages/POSPage'
+import CommissionsPage from './pages/CommissionsPage'
 
 export default function App() {
   const { user, loading } = useAuth()
@@ -68,6 +71,9 @@ export default function App() {
         <Route path="/supplies" element={<SuppliesPage />} />
         <Route path="/bills" element={<BillsPage />} />
         <Route path="/company-settings" element={<CompanySettingsPage />} />
+        <Route path="/customers" element={<CustomersPage />} />
+        <Route path="/pos" element={<POSPage />} />
+        <Route path="/commissions" element={<CommissionsPage />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Route>
     </Routes>

@@ -6,7 +6,19 @@ import { supabase } from '../lib/supabase'
 import Modal from '../components/common/Modal'
 import { fmt, fmtInt } from '../utils/format'
 
-const EMPTY_FORM = { name:'', phone:'', level:'junior', salary_type:'commission', base_salary:0, commission_rate:0 }
+const DEFAULT_WORKING_HOURS = {
+  mon:{start:'09:00',end:'18:00'}, tue:{start:'09:00',end:'18:00'},
+  wed:{start:'09:00',end:'18:00'}, thu:{start:'09:00',end:'18:00'},
+  fri:{start:'09:00',end:'18:00'}, sat:{start:'09:00',end:'14:00'}, sun:null
+}
+const DAYS_AR = { mon:'الإثنين', tue:'الثلاثاء', wed:'الأربعاء', thu:'الخميس', fri:'الجمعة', sat:'السبت', sun:'الأحد' }
+
+const EMPTY_FORM = {
+  name:'', phone:'', level:'junior', salary_type:'commission',
+  base_salary:0, commission_rate:0,
+  calendar_color:'#3B82F6',
+  working_hours: DEFAULT_WORKING_HOURS,
+}
 
 export default function EmployeesPage() {
   const { company } = useAuth()
@@ -43,7 +55,13 @@ export default function EmployeesPage() {
 
   function openNew() { setForm(EMPTY_FORM); setEditId(null); setModal(true) }
   function openEdit(emp) {
-    setForm({ name:emp.name, phone:emp.phone||'', level:emp.level, salary_type:emp.salary_type, base_salary:emp.base_salary, commission_rate:emp.commission_rate })
+    setForm({
+      name: emp.name, phone: emp.phone||'', level: emp.level,
+      salary_type: emp.salary_type, base_salary: emp.base_salary,
+      commission_rate: emp.commission_rate,
+      calendar_color: emp.calendar_color || '#3B82F6',
+      working_hours: emp.working_hours || DEFAULT_WORKING_HOURS,
+    })
     setEditId(emp.id)
     setModal(true)
   }
@@ -152,6 +170,38 @@ export default function EmployeesPage() {
               <input type="number" className="form-control" value={form.commission_rate} onChange={e => set('commission_rate', e.target.value)} />
             </div>
           )}
+          <div className="form-group">
+            <label className="form-label">لون التقويم</label>
+            <input type="color" className="form-control" value={form.calendar_color} onChange={e => set('calendar_color', e.target.value)} style={{ height:'42px', padding:'4px' }} />
+          </div>
+        </div>
+
+        {/* Working Hours */}
+        <div style={{ marginTop:'12px' }}>
+          <label className="form-label" style={{ fontWeight:700 }}>ساعات العمل</label>
+          <div style={{ display:'flex', flexDirection:'column', gap:'6px', marginTop:'6px' }}>
+            {Object.keys(DAYS_AR).map(day => {
+              const val = form.working_hours?.[day]
+              return (
+                <div key={day} style={{ display:'flex', alignItems:'center', gap:'8px' }}>
+                  <span style={{ width:'70px', fontSize:'13px' }}>{DAYS_AR[day]}</span>
+                  <input
+                    type="checkbox"
+                    checked={!!val}
+                    onChange={e => set('working_hours', { ...form.working_hours, [day]: e.target.checked ? {start:'09:00',end:'18:00'} : null })}
+                  />
+                  {val && <>
+                    <input type="time" value={val.start} onChange={e => set('working_hours', { ...form.working_hours, [day]: {...val, start:e.target.value} })}
+                      style={{ padding:'4px', border:'1px solid var(--border)', borderRadius:'6px', fontSize:'13px' }} />
+                    <span style={{ fontSize:'12px' }}>—</span>
+                    <input type="time" value={val.end} onChange={e => set('working_hours', { ...form.working_hours, [day]: {...val, end:e.target.value} })}
+                      style={{ padding:'4px', border:'1px solid var(--border)', borderRadius:'6px', fontSize:'13px' }} />
+                  </>}
+                  {!val && <span style={{ fontSize:'12px', color:'var(--text-muted)' }}>إجازة</span>}
+                </div>
+              )
+            })}
+          </div>
         </div>
       </Modal>
     </div>
