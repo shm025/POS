@@ -13,7 +13,10 @@ const PAGE_KEY = {
   'journal-entries': 'nav_journal_entries', supplies: 'nav_supplies', bills: 'nav_bills',
   'receipt-voucher': 'nav_receipt', 'payment-voucher': 'nav_payment',
   'company-settings': 'nav_company_settings',
+  customers: 'nav_customers', pos: 'nav_pos', commissions: 'nav_commissions',
 }
+
+const BIZ_ICON = { barber: '💈', retail: '🛒', restaurant: '🍽️', building_materials: '🏗️', auto_parts: '🔧' }
 
 export default function Sidebar() {
   const { company, logout } = useAuth()
@@ -22,10 +25,16 @@ export default function Sidebar() {
   const location = useLocation()
 
   const businessType = company?.business_type || 'retail'
-  const items = SIDEBAR_MENUS[businessType] || SIDEBAR_MENUS.retail
+  const menuItems = SIDEBAR_MENUS[businessType] || SIDEBAR_MENUS.retail
   const year = new Date().getFullYear()
 
-  const bizLabel = { barber: t('biz_barber'), retail: t('biz_retail') }
+  const bizLabel = {
+    barber: t('biz_barber') || 'صالون حلاقة',
+    retail: t('biz_retail') || 'تجارة تجزئة',
+    restaurant: 'مطعم',
+    building_materials: 'مواد بناء',
+    auto_parts: 'قطع سيارات',
+  }
 
   function isActive(page) {
     const path = location.pathname.replace('/', '')
@@ -35,39 +44,41 @@ export default function Sidebar() {
 
   return (
     <div className="sidebar">
+      {/* Logo */}
       <div className="sidebar-logo">
-        <h2>{company?.name || 'CATALAN POS'}</h2>
-        <p>{bizLabel[businessType] || ''}</p>
+        <div className="sidebar-logo-icon">
+          {BIZ_ICON[businessType] || '🏪'}
+        </div>
+        <div>
+          <h2>{company?.name || 'CATALAN POS'}</h2>
+          <p>{bizLabel[businessType] || ''}</p>
+        </div>
       </div>
 
+      {/* Period badge */}
       <div className="period-badge">
         01/01/{year} — 31/12/{year}
       </div>
 
-      {items.map(item => (
-        <div
-          key={item.page}
-          className={`nav-item${isActive(item.page) ? ' active' : ''}`}
-          onClick={() => navigate('/' + item.page)}
-        >
-          <span className="nav-icon">{item.icon}</span>
-          <span>{t(PAGE_KEY[item.page] || item.page)}</span>
-        </div>
-      ))}
+      {/* Nav items */}
+      <div style={{ flex: 1, paddingBottom: '8px' }}>
+        {menuItems.map(item => (
+          <div
+            key={item.page}
+            className={`nav-item${isActive(item.page) ? ' active' : ''}`}
+            onClick={() => navigate('/' + item.page)}
+          >
+            <span className="nav-icon">{item.icon}</span>
+            <span>{t(PAGE_KEY[item.page] || item.page)}</span>
+          </div>
+        ))}
+      </div>
 
-      <div className="sidebar-logout" style={{ marginTop: 'auto', padding: '16px' }}>
-        <button
-          onClick={logout}
-          style={{
-            width: '100%', padding: '10px',
-            background: 'rgba(255,255,255,0.06)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: '8px', color: 'rgba(255,255,255,0.6)',
-            cursor: 'pointer', fontFamily: "'Cairo',sans-serif",
-            fontSize: '13px', fontWeight: 600,
-          }}
-        >
-          🚪 {t('logout')}
+      {/* Footer / Logout */}
+      <div className="sidebar-footer">
+        <button className="sidebar-logout-btn" onClick={logout}>
+          <span>🚪</span>
+          <span>{t('logout') || 'تسجيل الخروج'}</span>
         </button>
       </div>
     </div>

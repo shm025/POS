@@ -102,6 +102,7 @@ export const i18n = {
     nav_items:'أصناف',nav_stock_report:'كشف المخزون',nav_warehouse:'المخازن',
     nav_accounts:'دليل الحسابات',nav_ledger:'كشف حساب',nav_trial_balance:'ميزان المراجعة',nav_journal_entries:'القيود المحاسبية',
     nav_supplies:'المستلزمات',nav_bills:'الفواتير الثابتة',nav_receipt:'سند قبض',nav_payment:'سند صرف',nav_company_settings:'بيانات الشركة',
+    nav_customers:'العملاء',nav_pos:'نقطة البيع',nav_commissions:'العمولات',
     // Login
     login_subtitle:'نظام إدارة الأعمال',login_email:'البريد الإلكتروني',login_password:'كلمة المرور',
     login_btn:'تسجيل الدخول',login_loading:'جاري تسجيل الدخول...',
