@@ -14,7 +14,6 @@ export const DOC_TYPES = {
 export const SIDEBAR_MENUS = {
   barber: [
     { icon:'📊', label:'لوحة التحكم',     page:'dashboard' },
-    { icon:'🖥️', label:'نقطة البيع POS',  page:'pos' },
     { icon:'✂️', label:'الخدمات',         page:'services' },
     { icon:'👥', label:'الموظفون',         page:'employees' },
     { icon:'💰', label:'العمولات',         page:'commissions' },
@@ -30,7 +29,6 @@ export const SIDEBAR_MENUS = {
   ],
   retail: [
     { icon:'📊', label:'لوحة التحكم',      page:'dashboard' },
-    { icon:'🖥️', label:'نقطة البيع POS',  page:'pos' },
     { icon:'👤', label:'العملاء',          page:'customers' },
     { icon:'🧾', label:'فاتورة مبيع',      page:'invoices' },
     { icon:'📋', label:'سجل الفواتير',     page:'invoices-list' },
