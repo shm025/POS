@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
-import { supabase } from '../lib/supabase'
-import { notify } from '../utils/notify'
-import { useLang } from '../contexts/LangContext'
-import { fmt } from '../utils/format'
+import { useAuth } from '../../contexts/AuthContext'
+import { supabase } from '../../lib/supabase'
+import { notify } from '../../utils/notify'
+import { useLang } from '../../contexts/LangContext'
+import { fmt } from '../../utils/format'
 
 const STATUS_BADGE = { paid:'badge-success', unpaid:'badge-warning', partial:'badge-info', cancelled:'badge-danger' }
 
@@ -36,8 +36,19 @@ export default function InvoicesListPage() {
 
   async function handleDelete(id) {
     if (!confirm(t('confirm_delete_invoice'))) return
+    const { data: lineItems } = await supabase
+      .from('invoice_items')
+      .select('item_id, quantity')
+      .eq('invoice_id', id)
+    if (lineItems?.length) {
+      for (const li of lineItems) {
+        if (!li.item_id) continue
+        const { data: item } = await supabase.from('items').select('stock').eq('id', li.item_id).single()
+        if (item) await supabase.from('items').update({ stock: (item.stock || 0) + (li.quantity || 0) }).eq('id', li.item_id)
+      }
+    }
     await supabase.from('invoices').delete().eq('id', id)
-    notify('تم الحذف')
+    notify(t('notify_deleted'))
     load()
   }
 

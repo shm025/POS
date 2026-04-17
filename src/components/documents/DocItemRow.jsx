@@ -1,7 +1,9 @@
 import TypeaheadInput from '../common/TypeaheadInput'
 import { fmt } from '../../utils/format'
+import { useLang } from '../../contexts/LangContext'
 
 export default function DocItemRow({ row, rowNumber, allItems, onUpdate, onSelect, onRemove }) {
+  const { t } = useLang()
   return (
     <tr id={`tr-${row._rowId}`}>
       <td style={{ width:'5%', textAlign:'center', color:'var(--text-muted)', fontSize:'12px' }}>{rowNumber}</td>
@@ -11,7 +13,7 @@ export default function DocItemRow({ row, rowNumber, allItems, onUpdate, onSelec
           onChange={val => onUpdate('itemCode', val)}
           onSelect={item => onSelect(item)}
           items={allItems}
-          placeholder="كود الصنف"
+          placeholder={t('ph_item_code')}
         />
       </td>
       <td style={{ width:'30%' }}>
@@ -20,7 +22,7 @@ export default function DocItemRow({ row, rowNumber, allItems, onUpdate, onSelec
           onChange={val => onUpdate('itemName', val)}
           onSelect={item => onSelect(item)}
           items={allItems}
-          placeholder="اسم الصنف"
+          placeholder={t('ph_item_name')}
           renderItem={it => (
             <>
               <span>{it.name}</span>

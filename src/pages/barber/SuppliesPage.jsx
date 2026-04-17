@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
-import { useAuth } from '../contexts/AuthContext'
-import { useLang } from '../contexts/LangContext'
-import { useSupplies } from '../hooks/useSupplies'
-import Modal from '../components/common/Modal'
-import { fmt, fmtInt } from '../utils/format'
+import { useAuth } from '../../contexts/AuthContext'
+import { useLang } from '../../contexts/LangContext'
+import { useSupplies } from '../../hooks/useSupplies'
+import Modal from '../../components/common/Modal'
+import { fmt, fmtInt } from '../../utils/format'
 
 const today = () => new Date().toISOString().split('T')[0]
 const EMPTY_FORM = { name:'', category:'supply', amount:0, date:today(), notes:'' }

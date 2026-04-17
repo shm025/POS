@@ -15,7 +15,7 @@ export default function CompanySettingsPage() {
     phone: '',
     email: '',
     website: '',
-    currency: 'USD - دولار أمريكي',
+    currency: 'USD',
     tax_rate: 11,
     period_start: '2026-01-01',
     period_end: '2026-12-31',
@@ -111,13 +111,13 @@ export default function CompanySettingsPage() {
           <div className="form-group">
             <label className="form-label">{t('lbl_currency')}</label>
             <select className="form-control" value={form.currency} onChange={e => set('currency', e.target.value)}>
-              <option>USD - دولار أمريكي</option>
-              <option>LBP - ليرة لبنانية</option>
-              <option>EUR - يورو</option>
+              <option value="USD">{t('currency_usd')}</option>
+              <option value="LBP">{t('currency_lbp')}</option>
+              <option value="EUR">{t('currency_eur')}</option>
             </select>
           </div>
           <div className="form-group">
-            <label className="form-label">💱 سعر الصرف (1 USD = ? LBP)</label>
+            <label className="form-label">{t('lbl_exchange_rate')}</label>
             <input
               type="number"
               className="form-control"
@@ -126,13 +126,13 @@ export default function CompanySettingsPage() {
               placeholder="89500"
             />
             <div style={{ fontSize:'12px', color:'var(--text-muted)', marginTop:'4px' }}>
-              معاينة: {preview.usd} = {preview.lbp}
+              {t('exchange_preview')}: {preview.usd} = {preview.lbp}
             </div>
           </div>
           <div className="form-group">
-            <label className="form-label">المنطقة الزمنية</label>
+            <label className="form-label">{t('lbl_timezone')}</label>
             <select className="form-control" value={form.timezone} onChange={e => set('timezone', e.target.value)}>
-              <option value="Asia/Beirut">Asia/Beirut (لبنان)</option>
+              <option value="Asia/Beirut">Asia/Beirut</option>
               <option value="UTC">UTC</option>
               <option value="Europe/London">Europe/London</option>
             </select>

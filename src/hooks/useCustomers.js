@@ -81,7 +81,7 @@ export function useCustomers(companyId) {
       type: 'earn',
       points,
       balance_after: newBalance,
-      description: description || 'نقاط مكتسبة من عملية شراء',
+      description: description || t('notify_points_earned'),
     })
   }, [companyId])
 
@@ -113,7 +113,7 @@ export function useCustomers(companyId) {
       type: 'redeem',
       points: -points,
       balance_after: newBalance,
-      description: 'استرداد نقاط',
+      description: t('notify_points_redeemed'),
     })
     return true
   }, [companyId, t])

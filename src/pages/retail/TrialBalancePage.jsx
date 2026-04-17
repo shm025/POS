@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { useAuth } from '../contexts/AuthContext'
-import { useAccounts } from '../hooks/useAccounts'
-import { useLang } from '../contexts/LangContext'
-import { fmt } from '../utils/format'
+import { useAuth } from '../../contexts/AuthContext'
+import { useAccounts } from '../../hooks/useAccounts'
+import { useLang } from '../../contexts/LangContext'
+import { fmt } from '../../utils/format'
 
 const LOCALE_MAP = { AR: 'ar-LB', EN: 'en-GB', FR: 'fr-FR' }
 
@@ -33,7 +33,7 @@ export default function TrialBalancePage() {
       <div className="card no-print" style={{ marginBottom:'12px', padding:'10px 16px' }}>
         <input
           className="form-control"
-          placeholder="🔍 ابحث بالكود أو الاسم..."
+          placeholder={`🔍 ${t('ph_search_code_name')}`}
           value={search}
           onChange={e => setSearch(e.target.value)}
           style={{ maxWidth:'320px' }}

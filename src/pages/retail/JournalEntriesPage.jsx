@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
-import { useJournalEntries } from '../hooks/useJournalEntries'
-import { useAccounts } from '../hooks/useAccounts'
-import { useAuth } from '../contexts/AuthContext'
-import { useLang } from '../contexts/LangContext'
-import { fmt } from '../utils/format'
+import { useJournalEntries } from '../../hooks/useJournalEntries'
+import { useAccounts } from '../../hooks/useAccounts'
+import { useAuth } from '../../contexts/AuthContext'
+import { useLang } from '../../contexts/LangContext'
+import { fmt } from '../../utils/format'
 
 let _rowId = 0
 const newLine = () => ({ _id: ++_rowId, debitAccId: '', creditAccId: '', amount: '', desc: '' })
@@ -57,7 +57,7 @@ export default function JournalEntriesPage() {
   const totalAmt = lines.reduce((s, l) => s + (parseFloat(l.amount) || 0), 0)
 
   const accOptions = [
-    <option key="" value="">— اختر الحساب —</option>,
+    <option key="" value="">{t('journal_select_acc')}</option>,
     ...accounts.map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>),
   ]
 
@@ -70,7 +70,7 @@ export default function JournalEntriesPage() {
       {/* ── Editor ── */}
       <div className="card" style={{ marginBottom:'20px' }}>
         <div className="card-header">
-          <div className="card-title">📋 إدخال القيود</div>
+          <div className="card-title">📋 {t('journal_enter_title')}</div>
           <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
             <input
               type="date"
@@ -87,10 +87,10 @@ export default function JournalEntriesPage() {
             <thead>
               <tr>
                 <th style={{ width:'3%' }}>#</th>
-                <th style={{ width:'25%' }}>حساب مدين</th>
-                <th style={{ width:'25%' }}>حساب دائن</th>
-                <th style={{ width:'12%' }}>المبلغ</th>
-                <th style={{ width:'30%' }}>البيان</th>
+                <th style={{ width:'25%' }}>{t('lbl_debit_acc')}</th>
+                <th style={{ width:'25%' }}>{t('lbl_credit_acc')}</th>
+                <th style={{ width:'12%' }}>{t('th_amount')}</th>
+                <th style={{ width:'30%' }}>{t('th_desc')}</th>
                 <th style={{ width:'5%' }}></th>
               </tr>
             </thead>
@@ -134,7 +134,7 @@ export default function JournalEntriesPage() {
                       style={{ fontSize:'12px', padding:'4px 6px' }}
                       value={l.desc}
                       onChange={e => setField(l._id, 'desc', e.target.value)}
-                      placeholder="البيان..."
+                      placeholder={t('lbl_desc_placeholder')}
                     />
                   </td>
                   <td style={{ textAlign:'center' }}>
@@ -150,7 +150,7 @@ export default function JournalEntriesPage() {
             <tfoot>
               <tr style={{ background:'var(--bg-panel)', fontWeight:700 }}>
                 <td colSpan="3" style={{ textAlign:'left', padding:'6px 8px', fontSize:'12px' }}>
-                  <button className="btn btn-sm btn-outline" onClick={addLine}>➕ إضافة سطر</button>
+                  <button className="btn btn-sm btn-outline" onClick={addLine}>➕ {t('journal_add_line')}</button>
                 </td>
                 <td style={{ padding:'6px 8px', fontSize:'13px', direction:'ltr', color:'var(--primary)' }}>
                   {fmt(totalAmt)}
@@ -162,7 +162,7 @@ export default function JournalEntriesPage() {
                     disabled={saving}
                     style={{ minWidth:'120px' }}
                   >
-                    {saving ? '...' : `💾 حفظ قيود ${date}`}
+                    {saving ? '...' : `💾 ${t('journal_save_date')} ${date}`}
                   </button>
                 </td>
               </tr>
@@ -174,13 +174,13 @@ export default function JournalEntriesPage() {
       {/* ── History ── */}
       <div className="card">
         <div className="card-header">
-          <div className="card-title">🗂 سجل القيود</div>
+          <div className="card-title">🗂 {t('journal_history_title')}</div>
         </div>
 
         {loading ? (
           <div style={{ padding:'20px', textAlign:'center' }}><div className="loading-spinner"></div></div>
         ) : sortedDates.length === 0 ? (
-          <div className="empty-state"><div className="icon">✏️</div><p>لا توجد قيود محفوظة</p></div>
+          <div className="empty-state"><div className="icon">✏️</div><p>{t('journal_no_saved')}</p></div>
         ) : sortedDates.map(d => {
           const rows = byDate[d]
           const dayTotal = rows.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0)
@@ -203,14 +203,14 @@ export default function JournalEntriesPage() {
                   <span style={{ fontWeight:700, color: isActive ? 'var(--primary)' : 'inherit' }}>
                     📅 {d}
                   </span>
-                  <span className="badge badge-secondary">{rows.length} قيد</span>
+                  <span className="badge badge-secondary">{rows.length} {t('journal_entry_unit')}</span>
                 </div>
                 <div style={{ display:'flex', alignItems:'center', gap:'12px' }}>
                   <span style={{ fontWeight:700, direction:'ltr', color:'var(--primary)' }}>{fmt(dayTotal)}</span>
                   <button
                     className="btn btn-sm btn-outline"
                     onClick={e => { e.stopPropagation(); loadDate(d) }}
-                  >✏️ تعديل</button>
+                  >✏️ {t('edit_btn')}</button>
                   <button
                     className="btn btn-sm btn-danger"
                     onClick={e => { e.stopPropagation(); deleteDate(d) }}
@@ -224,10 +224,10 @@ export default function JournalEntriesPage() {
                   <table style={{ width:'100%', fontSize:'12px', borderCollapse:'collapse' }}>
                     <thead>
                       <tr style={{ color:'var(--text-muted)', fontSize:'11px' }}>
-                        <th style={{ padding:'3px 6px', textAlign:'right', fontWeight:400 }}>مدين</th>
-                        <th style={{ padding:'3px 6px', textAlign:'right', fontWeight:400 }}>دائن</th>
-                        <th style={{ padding:'3px 6px', textAlign:'right', fontWeight:400 }}>المبلغ</th>
-                        <th style={{ padding:'3px 6px', textAlign:'right', fontWeight:400 }}>البيان</th>
+                        <th style={{ padding:'3px 6px', textAlign:'right', fontWeight:400 }}>{t('th_debit')}</th>
+                        <th style={{ padding:'3px 6px', textAlign:'right', fontWeight:400 }}>{t('th_credit')}</th>
+                        <th style={{ padding:'3px 6px', textAlign:'right', fontWeight:400 }}>{t('th_amount')}</th>
+                        <th style={{ padding:'3px 6px', textAlign:'right', fontWeight:400 }}>{t('th_desc')}</th>
                       </tr>
                     </thead>
                     <tbody>

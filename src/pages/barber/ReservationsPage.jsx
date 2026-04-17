@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react'
-import { useAuth } from '../contexts/AuthContext'
-import { useLang } from '../contexts/LangContext'
-import { useReservations } from '../hooks/useReservations'
-import { supabase } from '../lib/supabase'
-import Modal from '../components/common/Modal'
-import { fmt } from '../utils/format'
+import { useAuth } from '../../contexts/AuthContext'
+import { useLang } from '../../contexts/LangContext'
+import { useReservations } from '../../hooks/useReservations'
+import { supabase } from '../../lib/supabase'
+import Modal from '../../components/common/Modal'
+import { fmt } from '../../utils/format'
 
 const STATUS_BADGE = { pending:'badge-warning', confirmed:'badge-info', done:'badge-success', cancelled:'badge-danger', no_show:'badge-danger' }
-const SOURCE_LABEL = { walk_in:'حضور مباشر', phone:'هاتف', whatsapp:'واتساب', online:'أونلاين' }
+const SOURCE_KEY = { walk_in:'src_walk_in', phone:'src_phone', whatsapp:'src_whatsapp', online:'src_online' }
 const today = () => new Date().toISOString().split('T')[0]
 const EMPTY_FORM = {
   customer_name:'', customer_phone:'', service_id:'', service_name:'',
@@ -184,11 +184,11 @@ export default function ReservationsPage() {
             <input type="date" className="form-control" value={form.date} onChange={e => set('date', e.target.value)} />
           </div>
           <div className="form-group">
-            <label className="form-label">وقت البدء</label>
+            <label className="form-label">{t('lbl_start_time')}</label>
             <input type="time" className="form-control" value={form.time} onChange={e => set('time', e.target.value)} />
           </div>
           <div className="form-group">
-            <label className="form-label">وقت الانتهاء</label>
+            <label className="form-label">{t('lbl_end_time')}</label>
             <input type="time" className="form-control" value={form.end_time} onChange={e => set('end_time', e.target.value)} />
           </div>
           <div className="form-group">
@@ -196,13 +196,13 @@ export default function ReservationsPage() {
             <input type="number" className="form-control" value={form.price} onChange={e => set('price', e.target.value)} step="0.01" />
           </div>
           <div className="form-group">
-            <label className="form-label">مصدر الحجز</label>
+            <label className="form-label">{t('lbl_booking_source')}</label>
             <select className="form-control" value={form.source} onChange={e => set('source', e.target.value)}>
-              {Object.entries(SOURCE_LABEL).map(([k,v]) => <option key={k} value={k}>{v}</option>)}
+              {Object.entries(SOURCE_KEY).map(([k,v]) => <option key={k} value={k}>{t(v)}</option>)}
             </select>
           </div>
           <div className="form-group">
-            <label className="form-label">عربون ($)</label>
+            <label className="form-label">{t('lbl_deposit')}</label>
             <input type="number" className="form-control" value={form.deposit_amount} onChange={e => set('deposit_amount', e.target.value)} step="0.01" />
           </div>
           <div className="form-group">
@@ -212,18 +212,18 @@ export default function ReservationsPage() {
               <option value="confirmed">{t('res_confirmed')}</option>
               <option value="done">{t('res_done')}</option>
               <option value="cancelled">{t('res_cancelled')}</option>
-              <option value="no_show">لم يحضر</option>
+              <option value="no_show">{t('res_no_show')}</option>
             </select>
           </div>
         </div>
         <div style={{ display:'flex', gap:'16px', marginBottom:'8px' }}>
           <label style={{ display:'flex', alignItems:'center', gap:'6px', fontSize:'13px' }}>
             <input type="checkbox" checked={form.deposit_paid} onChange={e => set('deposit_paid', e.target.checked)} />
-            تم دفع العربون
+            {t('lbl_deposit_paid')}
           </label>
           <label style={{ display:'flex', alignItems:'center', gap:'6px', fontSize:'13px' }}>
             <input type="checkbox" checked={form.no_show} onChange={e => set('no_show', e.target.checked)} />
-            لم يحضر (no-show)
+            {t('lbl_no_show_check')}
           </label>
         </div>
         <div className="form-group">

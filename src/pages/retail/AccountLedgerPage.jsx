@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useAuth } from '../contexts/AuthContext'
-import { useAccounts } from '../hooks/useAccounts'
-import { useJournalEntries } from '../hooks/useJournalEntries'
-import { useCustomers } from '../hooks/useCustomers'
-import { useLang } from '../contexts/LangContext'
-import { supabase } from '../lib/supabase'
-import { fmt } from '../utils/format'
+import { useAuth } from '../../contexts/AuthContext'
+import { useAccounts } from '../../hooks/useAccounts'
+import { useJournalEntries } from '../../hooks/useJournalEntries'
+import { useCustomers } from '../../hooks/useCustomers'
+import { useLang } from '../../contexts/LangContext'
+import { supabase } from '../../lib/supabase'
+import { fmt } from '../../utils/format'
 
 // selectedId format: 'acc_<uuid>' for chart accounts, 'cust_<uuid>' for customers
 function parseSelection(selectedId) {
@@ -90,14 +90,14 @@ export default function AccountLedgerPage() {
         ...(invData || []).map(inv => ({
           date: inv.date || '',
           desc: inv.doc_type === 'invoices'
-            ? `فاتورة مبيع رقم ${inv.number}`
-            : `مرتجع مبيعات رقم ${inv.number}`,
+            ? `${t('desc_sale_invoice')} ${inv.number}`
+            : `${t('desc_sales_return')} ${inv.number}`,
           isDr: inv.doc_type === 'invoices',
           amt: parseFloat(inv.total || 0),
         })),
         ...(voucherData || []).map(v => ({
           date: v.date || '',
-          desc: `سند قبض${v.number ? ' #' + v.number : ''}${v.description ? ' - ' + v.description : ''}`,
+          desc: `${t('desc_receipt_voucher')}${v.number ? ' #' + v.number : ''}${v.description ? ' - ' + v.description : ''}`,
           isDr: false,
           amt: parseFloat(v.amount || 0),
         })),
@@ -131,14 +131,14 @@ export default function AccountLedgerPage() {
             <select className="form-control" value={selectedId} onChange={e => setSelectedId(e.target.value)}>
               <option value="">{t('select_account')}</option>
               {accounts.length > 0 && (
-                <optgroup label="دليل الحسابات">
+                <optgroup label={t('lbl_accounts_optgroup')}>
                   {accounts.map(a => (
                     <option key={a.id} value={`acc_${a.id}`}>{a.code} - {a.name}</option>
                   ))}
                 </optgroup>
               )}
               {customers.length > 0 && (
-                <optgroup label="العملاء">
+                <optgroup label={t('lbl_customers_optgroup')}>
                   {customers.map(c => (
                     <option key={c.id} value={`cust_${c.id}`}>👤 {c.name}</option>
                   ))}

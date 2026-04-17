@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
-import { useAuth } from '../contexts/AuthContext'
-import { useLang } from '../contexts/LangContext'
-import { useServices } from '../hooks/useServices'
-import Modal from '../components/common/Modal'
-import { fmt, fmtInt } from '../utils/format'
+import { useAuth } from '../../contexts/AuthContext'
+import { useLang } from '../../contexts/LangContext'
+import { useServices } from '../../hooks/useServices'
+import Modal from '../../components/common/Modal'
+import { fmt, fmtInt } from '../../utils/format'
 
 const EMPTY_FORM = { name:'', base_price:0, junior_price:0, senior_price:0, master_price:0, duration_minutes:30 }
 
@@ -62,7 +62,7 @@ export default function ServicesPage() {
                   <td style={{ direction:'ltr' }}>${fmt(s.senior_price)}</td>
                   <td style={{ direction:'ltr' }}>${fmt(s.master_price)}</td>
                   <td>{fmtInt(s.duration_minutes)} {t('min_abbr')}</td>
-                  <td><span className={`badge ${s.active ? 'badge-success' : 'badge-danger'}`}>{s.active ? t('svc_active') : t('svc_inactive')}</span></td>
+                  <td><span className={`badge ${s.is_active ? 'badge-success' : 'badge-danger'}`}>{s.is_active ? t('svc_active') : t('svc_inactive')}</span></td>
                   <td className="no-print">
                     <button className="btn btn-sm btn-outline" onClick={() => openEdit(s)}>✏️</button>
                     <button className="btn btn-sm btn-danger" style={{ marginRight:'4px' }} onClick={() => deleteService(s.id)}>🗑</button>

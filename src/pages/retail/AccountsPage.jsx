@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
-import { useAccounts } from '../hooks/useAccounts'
-import { useAuth } from '../contexts/AuthContext'
-import { useLang } from '../contexts/LangContext'
-import Modal from '../components/common/Modal'
-import { fmt } from '../utils/format'
+import { useAccounts } from '../../hooks/useAccounts'
+import { useAuth } from '../../contexts/AuthContext'
+import { useLang } from '../../contexts/LangContext'
+import Modal from '../../components/common/Modal'
+import { fmt } from '../../utils/format'
 
 const TYPE_BADGE = { asset:'badge-info', liability:'badge-danger', equity:'badge-secondary', revenue:'badge-success', expense:'badge-warning' }
 

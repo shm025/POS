@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
-import { useLang } from '../contexts/LangContext'
-import { supabase } from '../lib/supabase'
-import { fmt, fmtInt } from '../utils/format'
+import { useAuth } from '../../contexts/AuthContext'
+import { useLang } from '../../contexts/LangContext'
+import { supabase } from '../../lib/supabase'
+import { fmt, fmtInt } from '../../utils/format'
 
 const LOCALE_MAP = { AR: 'ar-LB', EN: 'en-GB', FR: 'fr-FR' }
 
@@ -70,7 +70,7 @@ export default function TradingDashboard() {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
         buckets.push({
           key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
-          label: d.toLocaleDateString('ar-LB', { month: 'short' }),
+          label: d.toLocaleDateString(LOCALE_MAP[lang] || 'en-GB', { month: 'short' }),
           total: 0,
         })
       }
@@ -81,7 +81,7 @@ export default function TradingDashboard() {
       })
       setMonthlySales(buckets)
     })
-  }, [company?.id])
+  }, [company?.id, lang])
 
   const totalRevenue = invoices.reduce((s, i) => s + parseFloat(i.total || 0), 0)
   const lowStock = items.filter(i => i.stock <= i.minStock)
@@ -112,11 +112,11 @@ export default function TradingDashboard() {
           <div className="stat-sub">{t('stat_rev_sub')}</div>
         </div>
         <div className="stat-card">
-          <div className="stat-label">📦 أكثر صنف مبيعاً (الشهر الماضي)</div>
+          <div className="stat-label">📦 {t('stat_top_item')}</div>
           <div className="stat-value" style={{ fontSize:'16px', lineHeight:'1.3' }}>
             {topItem ? topItem.name : '—'}
           </div>
-          <div className="stat-sub">{topItem ? `${fmtInt(topItem.qty)} وحدة مباعة` : 'لا توجد بيانات'}</div>
+          <div className="stat-sub">{topItem ? `${fmtInt(topItem.qty)} ${t('units_sold')}` : t('no_data_yet')}</div>
         </div>
         <div className="stat-card">
           <div className="stat-label">{t('inventory_items')}</div>
@@ -133,7 +133,7 @@ export default function TradingDashboard() {
       <div className="grid-2 mt-4">
         <div className="card">
           <div className="card-header">
-            <div className="card-title">📈 مبيعات آخر 6 أشهر</div>
+            <div className="card-title">📈 {t('sales_chart_6m')}</div>
           </div>
           <div style={{ padding: '0 12px 12px' }}>
             <div style={{ display:'flex', alignItems:'flex-end', gap:'6px', height:'120px' }}>
@@ -180,7 +180,7 @@ export default function TradingDashboard() {
       <div className="grid-2 mt-4">
         <div className="card">
           <div className="card-header">
-            <div className="card-title">🏭 أكثر مورد شراءً (هذا الشهر)</div>
+            <div className="card-title">🏭 {t('stat_top_supplier')}</div>
             <button className="btn btn-sm btn-outline" onClick={() => navigate('/purchases-list')}>{t('view_all')}</button>
           </div>
           <div id="top-suppliers-list">

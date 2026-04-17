@@ -1,17 +1,17 @@
 import { useState, useEffect } from 'react'
-import { useAuth } from '../contexts/AuthContext'
-import { useLang } from '../contexts/LangContext'
-import { useEmployees } from '../hooks/useEmployees'
-import { supabase } from '../lib/supabase'
-import Modal from '../components/common/Modal'
-import { fmt, fmtInt } from '../utils/format'
+import { useAuth } from '../../contexts/AuthContext'
+import { useLang } from '../../contexts/LangContext'
+import { useEmployees } from '../../hooks/useEmployees'
+import { supabase } from '../../lib/supabase'
+import Modal from '../../components/common/Modal'
+import { fmt, fmtInt } from '../../utils/format'
 
 const DEFAULT_WORKING_HOURS = {
   mon:{start:'09:00',end:'18:00'}, tue:{start:'09:00',end:'18:00'},
   wed:{start:'09:00',end:'18:00'}, thu:{start:'09:00',end:'18:00'},
   fri:{start:'09:00',end:'18:00'}, sat:{start:'09:00',end:'14:00'}, sun:null
 }
-const DAYS_AR = { mon:'الإثنين', tue:'الثلاثاء', wed:'الأربعاء', thu:'الخميس', fri:'الجمعة', sat:'السبت', sun:'الأحد' }
+const DAYS_KEY = { mon:'day_mon', tue:'day_tue', wed:'day_wed', thu:'day_thu', fri:'day_fri', sat:'day_sat', sun:'day_sun' }
 
 const EMPTY_FORM = {
   name:'', phone:'', level:'junior', salary_type:'commission',
@@ -171,20 +171,20 @@ export default function EmployeesPage() {
             </div>
           )}
           <div className="form-group">
-            <label className="form-label">لون التقويم</label>
+            <label className="form-label">{t('lbl_calendar_color')}</label>
             <input type="color" className="form-control" value={form.calendar_color} onChange={e => set('calendar_color', e.target.value)} style={{ height:'42px', padding:'4px' }} />
           </div>
         </div>
 
         {/* Working Hours */}
         <div style={{ marginTop:'12px' }}>
-          <label className="form-label" style={{ fontWeight:700 }}>ساعات العمل</label>
+          <label className="form-label" style={{ fontWeight:700 }}>{t('lbl_working_hours')}</label>
           <div style={{ display:'flex', flexDirection:'column', gap:'6px', marginTop:'6px' }}>
-            {Object.keys(DAYS_AR).map(day => {
+            {Object.keys(DAYS_KEY).map(day => {
               const val = form.working_hours?.[day]
               return (
                 <div key={day} style={{ display:'flex', alignItems:'center', gap:'8px' }}>
-                  <span style={{ width:'70px', fontSize:'13px' }}>{DAYS_AR[day]}</span>
+                  <span style={{ width:'70px', fontSize:'13px' }}>{t(DAYS_KEY[day])}</span>
                   <input
                     type="checkbox"
                     checked={!!val}
@@ -197,7 +197,7 @@ export default function EmployeesPage() {
                     <input type="time" value={val.end} onChange={e => set('working_hours', { ...form.working_hours, [day]: {...val, end:e.target.value} })}
                       style={{ padding:'4px', border:'1px solid var(--border)', borderRadius:'6px', fontSize:'13px' }} />
                   </>}
-                  {!val && <span style={{ fontSize:'12px', color:'var(--text-muted)' }}>إجازة</span>}
+                  {!val && <span style={{ fontSize:'12px', color:'var(--text-muted)' }}>{t('lbl_day_off')}</span>}
                 </div>
               )
             })}

@@ -39,7 +39,7 @@ export function AuthProvider({ children }) {
     if (error) throw error
 
     const result = await fetchCompanyData(data.user)
-    if (!result) throw new Error('لم يتم العثور على بيانات الشركة')
+    if (!result) throw new Error('Company data not found')
 
     setUser(data.user)
     setProfile(result.prof)

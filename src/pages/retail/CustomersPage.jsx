@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
-import { useAuth } from '../contexts/AuthContext'
-import { useLang } from '../contexts/LangContext'
-import { useCustomers } from '../hooks/useCustomers'
-import { useSuppliers } from '../hooks/useSuppliers'
-import Modal from '../components/common/Modal'
-import { fmt, fmtInt } from '../utils/format'
+import { useAuth } from '../../contexts/AuthContext'
+import { useLang } from '../../contexts/LangContext'
+import { useCustomers } from '../../hooks/useCustomers'
+import { useSuppliers } from '../../hooks/useSuppliers'
+import Modal from '../../components/common/Modal'
+import { fmt, fmtInt } from '../../utils/format'
 
 const TIER_BADGE = { bronze:'badge-secondary', silver:'badge-info', gold:'badge-warning', platinum:'badge-success' }
 
@@ -87,12 +87,12 @@ export default function CustomersPage() {
       <div className="flex-between mb-4">
         <h1 style={{ fontSize:'20px', fontWeight:900, color:'var(--primary)' }}>👥 {t('customers_title')}</h1>
         <button className="btn btn-primary" onClick={isCustomers ? openNewCustomer : openNewSupplier}>
-          ➕ {isCustomers ? t('new_customer_btn') : 'مورد جديد'}
+          ➕ {isCustomers ? t('new_customer_btn') : t('new_supplier_btn')}
         </button>
       </div>
 
       <div style={{ display:'flex', gap:'8px', marginBottom:'16px', borderBottom:'2px solid var(--border-light)', paddingBottom:'0' }}>
-        {[['customers','👤 العملاء'], ['suppliers','🏭 الموردون']].map(([key, label]) => (
+        {[['customers', t('customers_tab')], ['suppliers', t('suppliers_tab')]].map(([key, label]) => (
           <button
             key={key}
             onClick={() => switchTab(key)}
@@ -137,7 +137,7 @@ export default function CustomersPage() {
       {!isCustomers && (
         <div className="stats-grid" style={{ gridTemplateColumns:'repeat(2,1fr)' }}>
           <div className="stat-card">
-            <div className="stat-label">إجمالي الموردين</div>
+            <div className="stat-label">{t('supp_total')}</div>
             <div className="stat-value">{fmtInt(suppliers.length)}</div>
           </div>
         </div>
@@ -158,7 +158,7 @@ export default function CustomersPage() {
             <table>
               <thead>
                 <tr>
-                  <th>الكود</th><th>{t('lbl_name')}</th><th>{t('lbl_phone')}</th><th>{t('lbl_email')}</th>
+                  <th>{t('th_code')}</th><th>{t('lbl_name')}</th><th>{t('lbl_phone')}</th><th>{t('lbl_email')}</th>
                   <th>{t('cust_th_points')}</th><th>{t('cust_th_tier')}</th>
                   <th>{t('cust_th_visits')}</th><th>{t('cust_th_spend')}</th>
                   <th>{t('cust_th_whatsapp')}</th><th className="no-print">{t('th_action')}</th>
@@ -196,15 +196,15 @@ export default function CustomersPage() {
             <table>
               <thead>
                 <tr>
-                  <th>الكود</th><th>الاسم</th><th>الهاتف</th><th>البريد الإلكتروني</th>
-                  <th>ملاحظات</th><th className="no-print">إجراء</th>
+                  <th>{t('th_code')}</th><th>{t('th_name')}</th><th>{t('th_phone')}</th><th>{t('lbl_email')}</th>
+                  <th>{t('lbl_notes')}</th><th className="no-print">{t('th_action')}</th>
                 </tr>
               </thead>
               <tbody>
                 {suppLoading ? (
                   <tr><td colSpan="6" style={{ textAlign:'center', padding:'20px' }}><div className="loading-spinner"></div></td></tr>
                 ) : filteredSuppliers.length === 0 ? (
-                  <tr><td colSpan="6"><div className="empty-state"><div className="icon">🏭</div><p>لا يوجد موردون</p></div></td></tr>
+                  <tr><td colSpan="6"><div className="empty-state"><div className="icon">🏭</div><p>{t('no_suppliers')}</p></div></td></tr>
                 ) : filteredSuppliers.map(s => (
                   <tr key={s.id}>
                     <td style={{ fontWeight:700, color:'var(--primary)', direction:'ltr' }}>{s.code || '—'}</td>
@@ -238,7 +238,7 @@ export default function CustomersPage() {
         >
           <div className="grid-2">
             <div className="form-group">
-              <label className="form-label">الكود *</label>
+              <label className="form-label">{t('th_code')} *</label>
               <input className="form-control" value={form.code} onChange={e => set('code', e.target.value)} placeholder="C-001" style={{ fontWeight:700 }} />
             </div>
             <div className="form-group">
@@ -273,7 +273,7 @@ export default function CustomersPage() {
         <Modal
           isOpen={modal}
           onClose={() => setModal(false)}
-          title={editId ? '✏️ تعديل المورد' : '➕ مورد جديد'}
+          title={editId ? `✏️ ${t('edit_supplier_title')}` : `➕ ${t('new_supplier_title')}`}
           footer={
             <>
               <button className="btn btn-primary" onClick={handleSave}>💾 {t('btn_save')}</button>
@@ -283,24 +283,24 @@ export default function CustomersPage() {
         >
           <div className="grid-2">
             <div className="form-group">
-              <label className="form-label">الكود *</label>
+              <label className="form-label">{t('th_code')} *</label>
               <input className="form-control" value={form.code || ''} onChange={e => set('code', e.target.value)} placeholder="S-001" style={{ fontWeight:700 }} />
             </div>
             <div className="form-group">
-              <label className="form-label">الاسم *</label>
+              <label className="form-label">{t('lbl_cust_name')} *</label>
               <input className="form-control" value={form.name} onChange={e => set('name', e.target.value)} />
             </div>
             <div className="form-group">
-              <label className="form-label">الهاتف</label>
+              <label className="form-label">{t('lbl_phone')}</label>
               <input className="form-control" value={form.phone || ''} onChange={e => set('phone', e.target.value)} placeholder="e.g. 01123456" />
             </div>
             <div className="form-group">
-              <label className="form-label">البريد الإلكتروني</label>
+              <label className="form-label">{t('lbl_email')}</label>
               <input className="form-control" value={form.email || ''} onChange={e => set('email', e.target.value)} />
             </div>
           </div>
           <div className="form-group">
-            <label className="form-label">ملاحظات</label>
+            <label className="form-label">{t('lbl_notes')}</label>
             <textarea className="form-control" rows="2" value={form.notes || ''} onChange={e => set('notes', e.target.value)} />
           </div>
         </Modal>

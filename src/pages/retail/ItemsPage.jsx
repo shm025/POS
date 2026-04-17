@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
-import { useItems } from '../hooks/useItems'
-import { useAuth } from '../contexts/AuthContext'
-import { useLang } from '../contexts/LangContext'
-import Modal from '../components/common/Modal'
-import { fmt, fmtInt } from '../utils/format'
-import { exportItemsCSV } from '../utils/csv'
+import { useItems } from '../../hooks/useItems'
+import { useAuth } from '../../contexts/AuthContext'
+import { useLang } from '../../contexts/LangContext'
+import Modal from '../../components/common/Modal'
+import { fmt, fmtInt } from '../../utils/format'
+import { exportItemsCSV } from '../../utils/csv'
 
 export default function ItemsPage() {
   const { company } = useAuth()
@@ -14,7 +14,7 @@ export default function ItemsPage() {
   const [catFilter, setCatFilter] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [form, setForm] = useState({
-    code:'', name:'', category:'', unit:'قطعة',
+    code:'', name:'', category:'', unit:'piece',
     cost_price:0, selling_price:0, stock:0,
     reorder_point:5, reorder_qty:10,
     barcode:'', brand:'', tax_rate:0, sell_by_weight:false,
@@ -31,14 +31,14 @@ export default function ItemsPage() {
   })
 
   function openNew() {
-    setForm({ code:'', name:'', category:'', unit:'قطعة', cost_price:0, selling_price:0, stock:0, reorder_point:5, reorder_qty:10, barcode:'', brand:'', tax_rate:0, sell_by_weight:false })
+    setForm({ code:'', name:'', category:'', unit:'piece', cost_price:0, selling_price:0, stock:0, reorder_point:5, reorder_qty:10, barcode:'', brand:'', tax_rate:0, sell_by_weight:false })
     setEditId(null)
     setModalOpen(true)
   }
 
   function openEdit(item) {
     setForm({
-      code: item.code||'', name: item.name||'', category: item.category||'', unit: item.unit||'قطعة',
+      code: item.code||'', name: item.name||'', category: item.category||'', unit: item.unit||'piece',
       cost_price: item.cost_price||0, selling_price: item.selling_price||0, stock: item.stock||0,
       reorder_point: item.reorder_point||5, reorder_qty: item.reorder_qty||10,
       barcode: item.barcode||'', brand: item.brand||'', tax_rate: item.tax_rate||0,
@@ -69,7 +69,7 @@ export default function ItemsPage() {
 
       <div className="card">
         <div className="search-bar no-print">
-          <input className="form-control" placeholder={`🔍 ${t('search_items')} / باركود / ماركة`} value={search} onChange={e => setSearch(e.target.value)} />
+          <input className="form-control" placeholder={`🔍 ${t('search_items')} / ${t('lbl_barcode')} / ${t('lbl_brand')}`} value={search} onChange={e => setSearch(e.target.value)} />
           <select className="form-control" style={{ width:'180px' }} value={catFilter} onChange={e => setCatFilter(e.target.value)}>
             <option value="">{t('all_categories')}</option>
             {categories.map(c => <option key={c} value={c}>{c}</option>)}
@@ -80,9 +80,9 @@ export default function ItemsPage() {
           <table>
             <thead>
               <tr>
-                <th>{t('th_code')}</th><th>{t('th_name')}</th><th>باركود</th><th>{t('th_category')}</th>
-                <th>{t('th_cost')}</th><th>{t('th_price')}</th><th>ضريبة%</th>
-                <th>{t('th_stock')}</th><th>نقطة الطلب</th><th>{t('th_status')}</th>
+                <th>{t('th_code')}</th><th>{t('th_name')}</th><th>{t('th_barcode')}</th><th>{t('th_category')}</th>
+                <th>{t('th_cost')}</th><th>{t('th_price')}</th><th>{t('th_tax')}</th>
+                <th>{t('th_stock')}</th><th>{t('th_reorder')}</th><th>{t('th_status')}</th>
                 <th className="no-print">{t('th_action')}</th>
               </tr>
             </thead>
@@ -129,20 +129,20 @@ export default function ItemsPage() {
         <div className="grid-2">
           <div className="form-group"><label className="form-label">{t('lbl_item_code')}</label><input className="form-control" value={form.code} onChange={f('code')} /></div>
           <div className="form-group"><label className="form-label">{t('lbl_item_name')} *</label><input className="form-control" value={form.name} onChange={f('name')} /></div>
-          <div className="form-group"><label className="form-label">باركود</label><input className="form-control" value={form.barcode} onChange={f('barcode')} placeholder="scan or type" /></div>
-          <div className="form-group"><label className="form-label">الماركة / العلامة</label><input className="form-control" value={form.brand} onChange={f('brand')} /></div>
+          <div className="form-group"><label className="form-label">{t('lbl_barcode')}</label><input className="form-control" value={form.barcode} onChange={f('barcode')} placeholder="scan or type" /></div>
+          <div className="form-group"><label className="form-label">{t('lbl_brand')}</label><input className="form-control" value={form.brand} onChange={f('brand')} /></div>
           <div className="form-group"><label className="form-label">{t('lbl_item_category')}</label><input className="form-control" value={form.category} onChange={f('category')} /></div>
           <div className="form-group"><label className="form-label">{t('lbl_item_unit')}</label><input className="form-control" value={form.unit} onChange={f('unit')} /></div>
           <div className="form-group"><label className="form-label">{t('lbl_item_cost')}</label><input type="number" className="form-control" value={form.cost_price} onChange={f('cost_price')} /></div>
           <div className="form-group"><label className="form-label">{t('lbl_item_price')}</label><input type="number" className="form-control" value={form.selling_price} onChange={f('selling_price')} /></div>
-          <div className="form-group"><label className="form-label">نسبة الضريبة (%)</label><input type="number" className="form-control" value={form.tax_rate} onChange={f('tax_rate')} /></div>
+          <div className="form-group"><label className="form-label">{t('lbl_item_tax')}</label><input type="number" className="form-control" value={form.tax_rate} onChange={f('tax_rate')} /></div>
           <div className="form-group"><label className="form-label">{t('lbl_item_stock')}</label><input type="number" className="form-control" value={form.stock} onChange={f('stock')} /></div>
-          <div className="form-group"><label className="form-label">نقطة إعادة الطلب</label><input type="number" className="form-control" value={form.reorder_point} onChange={f('reorder_point')} /></div>
-          <div className="form-group"><label className="form-label">كمية إعادة الطلب</label><input type="number" className="form-control" value={form.reorder_qty} onChange={f('reorder_qty')} /></div>
+          <div className="form-group"><label className="form-label">{t('lbl_reorder_point')}</label><input type="number" className="form-control" value={form.reorder_point} onChange={f('reorder_point')} /></div>
+          <div className="form-group"><label className="form-label">{t('lbl_reorder_qty')}</label><input type="number" className="form-control" value={form.reorder_qty} onChange={f('reorder_qty')} /></div>
         </div>
         <div className="form-group" style={{ display:'flex', alignItems:'center', gap:'8px' }}>
           <input type="checkbox" id="sell_by_weight" checked={form.sell_by_weight} onChange={e => setForm(p => ({...p, sell_by_weight: e.target.checked}))} />
-          <label htmlFor="sell_by_weight" className="form-label" style={{ margin:0 }}>يُباع بالوزن</label>
+          <label htmlFor="sell_by_weight" className="form-label" style={{ margin:0 }}>{t('lbl_sell_by_weight')}</label>
         </div>
       </Modal>
     </div>

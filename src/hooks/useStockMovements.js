@@ -47,7 +47,7 @@ export function useStockMovements(companyId) {
       movement_type: 'adjust',
       quantity: qty,
       user_id: userId || null,
-      notes: reason || 'تعديل يدوي',
+      notes: reason || t('notify_adj_manual'),
     })
 
     await supabase.from('audit_log').insert({

@@ -59,7 +59,7 @@ export default function DocEditor({ docType, docId }) {
       <div className="flex-between mb-4 no-print">
         <h1 style={{ fontSize:'20px', fontWeight:900, color:'var(--primary)' }}>{cfg.icon} {t(typeKeys.labelKey)}</h1>
         <div className="flex gap-2">
-          <button className="btn btn-outline" onClick={duplicateDoc}>📋 {t('duplicate_btn') || 'تكرار'}</button>
+          <button className="btn btn-outline" onClick={duplicateDoc}>📋 {t('duplicate_btn')}</button>
           <button className="btn btn-outline" onClick={() => window.print()}>🖨 {t('print_btn')}</button>
           <button className="btn btn-success" onClick={saveDoc}>💾 {t('save_btn')}</button>
         </div>

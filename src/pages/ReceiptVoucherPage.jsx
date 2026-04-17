@@ -46,7 +46,7 @@ export default function ReceiptVoucherPage() {
     ...suppliers.map(s => ({ id: s.id,  code: s.code||'', name: s.name, _type: 'supplier' })),
   ]
 
-  const typeLabel = { account:'حساب', customer:'عميل', supplier:'مورد' }
+  const typeLabel = { account: t('type_account'), customer: t('type_customer'), supplier: t('type_supplier') }
 
   return (
     <div className="page-view">
@@ -74,25 +74,25 @@ export default function ReceiptVoucherPage() {
           </div>
 
           <div className="form-group">
-            <label className="form-label">حساب مدين</label>
+            <label className="form-label">{t('lbl_debit_acc')}</label>
             <TypeaheadInput
               value={form.debitAcc}
               onChange={v => setForm(p => ({ ...p, debitAcc: v }))}
               onSelect={a => setForm(p => ({ ...p, debitAcc: a.code ? `${a.code} - ${a.name}` : a.name }))}
               items={partyItems}
-              placeholder="اكتب كود أو اسم..."
+              placeholder={t('ph_code_or_name')}
               renderItem={a => <><span>{a.code ? `${a.code} - ` : ''}{a.name}</span><span className="item-code">{typeLabel[a._type]}</span></>}
             />
           </div>
 
           <div className="form-group">
-            <label className="form-label">حساب دائن</label>
+            <label className="form-label">{t('lbl_credit_acc')}</label>
             <TypeaheadInput
               value={form.creditAcc}
               onChange={v => setForm(p => ({ ...p, creditAcc: v }))}
               onSelect={a => setForm(p => ({ ...p, creditAcc: a.code ? `${a.code} - ${a.name}` : a.name }))}
               items={partyItems}
-              placeholder="اكتب كود أو اسم..."
+              placeholder={t('ph_code_or_name')}
               renderItem={a => <><span>{a.code ? `${a.code} - ` : ''}{a.name}</span><span className="item-code">{typeLabel[a._type]}</span></>}
             />
           </div>
@@ -115,8 +115,8 @@ export default function ReceiptVoucherPage() {
                 <tr>
                   <th>{t('th_number')}</th>
                   <th>{t('th_amount')}</th>
-                  <th>مدين</th>
-                  <th>دائن</th>
+                  <th>{t('th_debit')}</th>
+                  <th>{t('th_credit')}</th>
                   <th>{t('th_date')}</th>
                 </tr>
               </thead>

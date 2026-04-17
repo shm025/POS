@@ -13,7 +13,7 @@ export function useDocuments(companyId) {
   const [docId, setDocId] = useState(null)
   const [docMeta, setDocMeta] = useState({
     number: '', party: '', date: new Date().toISOString().split('T')[0],
-    dueDate: '', warehouse: 'المخزن الرئيسي', status: 'unpaid',
+    dueDate: '', warehouse: '', status: 'unpaid',
     discount: 0, tax: 11, notes: '',
   })
   const [docItems, setDocItems] = useState([])
@@ -29,7 +29,7 @@ export function useDocuments(companyId) {
     setDocId(editId)
 
     const itemsPromise = companyId
-      ? supabase.from('items').select('*').eq('company_id', companyId).order('created_at', { ascending: true })
+      ? supabase.from('items').select('*').eq('company_id', companyId).eq('is_active', true).order('name', { ascending: true })
       : Promise.resolve({ data: [] })
 
     const docPromise = editId
@@ -57,7 +57,7 @@ export function useDocuments(companyId) {
         .select('*', { count: 'exact', head: true })
         .eq('company_id', companyId)
         .eq('doc_type', type)
-      number = `${cfg.prefix}-2026-${String((count || 0) + 1).padStart(3, '0')}`
+      number = `${cfg.prefix}-${new Date().getFullYear()}-${String((count || 0) + 1).padStart(3, '0')}`
     }
 
     const today = new Date().toISOString().split('T')[0]
@@ -66,7 +66,7 @@ export function useDocuments(companyId) {
       party: docData?.customer_name || '',   // cloud uses customer_name
       date: docData?.date || today,
       dueDate: docData?.due_date || '',
-      warehouse: docData?.warehouse || 'المخزن الرئيسي',
+      warehouse: docData?.warehouse || '',
       status: docData?.status || 'unpaid',
       discount: docData?.discount ?? 0,
       tax: docData?.tax ?? 11,
@@ -79,8 +79,9 @@ export function useDocuments(companyId) {
         itemId: it.item_id,
         itemCode: '',
         itemName: it.item_name || '',
-        qty: it.quantity,          // cloud: quantity
+        qty: it.quantity,
         price: it.unit_price,
+        cost: it.cost_price || 0,
         discount: it.discount,
         total: it.total,
       })))
@@ -127,7 +128,7 @@ export function useDocuments(companyId) {
       if (r._rowId !== rowId) return r
       const qty = parseFloat(r.qty) || 1
       const price = item.price || 0
-      return { ...r, itemId: item.id, itemCode: item.code || '', itemName: item.name || '', price, qty, total: qty * price }
+      return { ...r, itemId: item.id, itemCode: item.code || '', itemName: item.name || '', price, cost: item.cost || 0, qty, total: qty * price }
     }))
   }
 
@@ -198,8 +199,9 @@ export function useDocuments(companyId) {
         company_id: companyId,
         item_id: r.itemId || null,
         item_name: r.itemName,
-        quantity: parseFloat(r.qty) || 0,    // cloud: quantity
+        quantity: parseFloat(r.qty) || 0,
         unit_price: parseFloat(r.price) || 0,
+        cost_price: parseFloat(r.cost) || 0,
         discount: parseFloat(r.discount) || 0,
         total: parseFloat(r.total) || 0,
       }))
@@ -213,10 +215,10 @@ export function useDocuments(companyId) {
         .map(i => ({
           company_id: companyId,
           item_id: i.item_id,
-          invoice_id: invoiceUuid,    // cloud: invoice_id (not document_id)
+          invoice_id: invoiceUuid,
           movement_type: docType,
-          qty: i.quantity,
-          date: docMeta.date,
+          quantity: i.quantity,
+          cost_at_time: i.cost_price || 0,
         }))
       if (movements.length) await supabase.from('stock_movements').insert(movements)
     }
@@ -240,7 +242,7 @@ export function useDocuments(companyId) {
       date: new Date().toISOString().split('T')[0],
       status: 'unpaid',
     }))
-    notify('📋 ' + t('doc_duplicated') || '📋 تم نسخ المستند — احفظ لإنشاء نسخة جديدة')
+    notify('📋 ' + t('doc_duplicated'))
   }
 
   return {

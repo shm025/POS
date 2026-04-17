@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
-import { useAuth } from '../contexts/AuthContext'
-import { useLang } from '../contexts/LangContext'
-import { useItems } from '../hooks/useItems'
-import { useCustomers } from '../hooks/useCustomers'
-import { processCheckout } from '../lib/checkout'
-import { formatCurrency, fmt, fmtInt } from '../utils/format'
-import { notify } from '../utils/notify'
+import { useAuth } from '../../contexts/AuthContext'
+import { useLang } from '../../contexts/LangContext'
+import { useItems } from '../../hooks/useItems'
+import { useCustomers } from '../../hooks/useCustomers'
+import { processCheckout } from '../../lib/checkout'
+import { formatCurrency, fmt, fmtInt } from '../../utils/format'
+import { notify } from '../../utils/notify'
 
 export default function POSPage() {
   const { company, profile } = useAuth()
@@ -73,7 +73,7 @@ export default function POSPage() {
       return [...prev, {
         item_id: item.id,
         name: item.name,
-        unit: item.unit || 'قطعة',
+        unit: item.unit || 'piece',
         unit_price: item.selling_price || 0,
         cost_price: item.cost_price || 0,
         qty: 1,

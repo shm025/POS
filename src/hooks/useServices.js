@@ -11,17 +11,18 @@ export function useServices(companyId) {
   const loadServices = useCallback(async () => {
     if (!companyId) return
     setLoading(true)
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('services')
       .select('*')
       .eq('company_id', companyId)
-      .order('created_at', { ascending: true })
+      .order('name', { ascending: true })
+    if (error) notify(t('save_error') + ': ' + error.message, 'error')
     setServices(data || [])
     setLoading(false)
-  }, [companyId])
+  }, [companyId, t])
 
   const saveService = useCallback(async (formData, editId) => {
-    const data = { company_id: companyId, ...formData, active: true }
+    const data = { company_id: companyId, ...formData, is_active: true }
     if (editId) {
       const { error } = await supabase.from('services').update(data).eq('id', editId)
       if (error) { notify(t('save_error') + ': ' + error.message, 'error'); return false }

@@ -1,6 +1,6 @@
 import { useAuth } from '../contexts/AuthContext'
-import TradingDashboard from './TradingDashboard'
-import BarberDashboard from './BarberDashboard'
+import TradingDashboard from './retail/TradingDashboard'
+import BarberDashboard from './barber/BarberDashboard'
 
 export default function Dashboard() {
   const { company } = useAuth()

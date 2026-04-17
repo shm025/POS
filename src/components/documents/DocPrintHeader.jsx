@@ -1,13 +1,14 @@
 import { useAuth } from '../../contexts/AuthContext'
+import { useLang } from '../../contexts/LangContext'
 import { fmt } from '../../utils/format'
 import { numberToArabicWords } from '../../utils/format'
 
-const DOC_TITLE = {
-  invoices:           'مبيع بالحساب',
-  'sales-return':     'مرتجع مبيعات',
-  orders:             'طلبية',
-  purchases:          'شراء بالحساب',
-  'purchases-return': 'مرتجع مشتريات',
+const DOC_TITLE_KEY = {
+  invoices:           'doc_type_invoices',
+  'sales-return':     'doc_type_sales_return',
+  orders:             'doc_type_orders',
+  purchases:          'doc_type_purchases',
+  'purchases-return': 'doc_type_purchases_return',
 }
 
 const S = {
@@ -18,6 +19,7 @@ const S = {
 
 export default function DocPrintHeader({ docType, docMeta, subtotal, afterDisc, total, totalQty, discount, tax }) {
   const { company } = useAuth()
+  const { t } = useLang()
 
   return (
     <>
@@ -55,7 +57,7 @@ export default function DocPrintHeader({ docType, docMeta, subtotal, afterDisc, 
               {/* Right — document type + meta */}
               <td style={{ width:'45%', verticalAlign:'top', padding:'5px 8px' }}>
                 <div style={{ textAlign:'center', fontSize:'14px', fontWeight:900, color:'#000', borderBottom:'1px solid #000', paddingBottom:'3px', marginBottom:'4px' }}>
-                  {DOC_TITLE[docType] || 'مستند'}
+                  {DOC_TITLE_KEY[docType] ? t(DOC_TITLE_KEY[docType]) : t('no_data')}
                 </div>
                 <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'9px' }}>
                   <tbody>
@@ -83,7 +85,7 @@ export default function DocPrintHeader({ docType, docMeta, subtotal, afterDisc, 
               <table style={{ width:'100%', borderCollapse:'collapse', border:'1px solid #999' }}>
                 <tbody>
                   <tr><td style={{ ...S.label, textAlign:'center' }}>Amount in Words</td></tr>
-                  <tr><td style={{ ...S.cell, fontSize:'9px' }}>{numberToArabicWords(total)} دولار أمريكي لاغير</td></tr>
+                  <tr><td style={{ ...S.cell, fontSize:'9px' }}>{numberToArabicWords(total)} {t('amount_in_words_suffix')}</td></tr>
                 </tbody>
               </table>
               <table style={{ width:'100%', borderCollapse:'collapse', border:'1px solid #999', marginTop:'4px' }}>

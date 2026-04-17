@@ -36,8 +36,19 @@ export default function PurchasesListPage() {
 
   async function handleDelete(id) {
     if (!confirm(t('confirm_delete_invoice'))) return
+    const { data: lineItems } = await supabase
+      .from('invoice_items')
+      .select('item_id, quantity')
+      .eq('invoice_id', id)
+    if (lineItems?.length) {
+      for (const li of lineItems) {
+        if (!li.item_id) continue
+        const { data: item } = await supabase.from('items').select('stock').eq('id', li.item_id).single()
+        if (item) await supabase.from('items').update({ stock: Math.max(0, (item.stock || 0) - (li.quantity || 0)) }).eq('id', li.item_id)
+      }
+    }
     await supabase.from('invoices').delete().eq('id', id)
-    notify('تم الحذف')
+    notify(t('notify_deleted'))
     load()
   }
 

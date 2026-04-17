@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react'
-import { useAuth } from '../contexts/AuthContext'
-import { useItems } from '../hooks/useItems'
-import { useStockMovements } from '../hooks/useStockMovements'
-import { useLang } from '../contexts/LangContext'
-import { fmt, fmtInt } from '../utils/format'
-import { exportStockCSV } from '../utils/csv'
-import Modal from '../components/common/Modal'
+import { useAuth } from '../../contexts/AuthContext'
+import { useItems } from '../../hooks/useItems'
+import { useStockMovements } from '../../hooks/useStockMovements'
+import { useLang } from '../../contexts/LangContext'
+import { fmt, fmtInt } from '../../utils/format'
+import { exportStockCSV } from '../../utils/csv'
+import Modal from '../../components/common/Modal'
 
-const MOVE_TYPE_LABEL = {
-  sale: 'بيع', return: 'مرتجع', receive: 'استلام', adjust: 'تعديل',
-  transfer_in: 'تحويل وارد', transfer_out: 'تحويل صادر', waste: 'هالك',
+const MOVE_TYPE_KEY = {
+  sale: 'move_sale', return: 'move_return', receive: 'move_receive', adjust: 'move_adjust',
+  transfer_in: 'move_transfer_in', transfer_out: 'move_transfer_out', waste: 'move_waste',
 }
 const MOVE_TYPE_COLOR = {
   sale: 'var(--danger)', return: 'var(--success)', receive: 'var(--success)',
@@ -74,22 +74,22 @@ export default function StockReportPage() {
         <div className="stat-card"><div className="stat-label">{t('total_units_label')}</div><div className="stat-value">{fmtInt(items.reduce((s, i) => s + (i.stock || 0), 0))}</div></div>
         <div className="stat-card"><div className="stat-label">{t('stock_value_label')}</div><div className="stat-value" style={{ fontSize: '18px', direction: 'ltr' }}>${fmt(totalValue)}</div></div>
         <div className="stat-card"><div className="stat-label">{t('low_stock_label')}</div><div className="stat-value" style={{ color: 'var(--danger)' }}>{fmtInt(lowCount)}</div></div>
-        <div className="stat-card"><div className="stat-label">بضاعة راكدة (+60 يوم)</div><div className="stat-value" style={{ color: 'var(--warning)' }}>{fmtInt(deadStock)}</div></div>
+        <div className="stat-card"><div className="stat-label">{t('dead_stock_label')}</div><div className="stat-value" style={{ color: 'var(--warning)' }}>{fmtInt(deadStock)}</div></div>
       </div>
 
       <div className="card mt-4">
         <div className="search-bar no-print mb-2">
-          <input className="form-control" placeholder="🔍 فلتر بالاسم / الكود / الباركود..." value={filter} onChange={e => setFilter(e.target.value)} />
+          <input className="form-control" placeholder={`🔍 ${t('stock_filter_placeholder')}...`} value={filter} onChange={e => setFilter(e.target.value)} />
         </div>
         <div className="table-wrapper">
           <table>
             <thead>
               <tr>
-                <th>{t('th_code')}</th><th>{t('th_name')}</th><th>باركود</th>
-                <th>سعر الشراء</th><th>سعر البيع</th><th>هامش%</th>
-                <th>{t('th_current_stock')}</th><th>نقطة الطلب</th>
+                <th>{t('th_code')}</th><th>{t('th_name')}</th><th>{t('th_barcode')}</th>
+                <th>{t('th_cost')}</th><th>{t('th_price')}</th><th>{t('th_margin')}</th>
+                <th>{t('th_current_stock')}</th><th>{t('th_reorder')}</th>
                 <th>{t('th_value')}</th><th>{t('th_status')}</th>
-                <th className="no-print">إجراء</th>
+                <th className="no-print">{t('th_action')}</th>
               </tr>
             </thead>
             <tbody>
@@ -119,11 +119,11 @@ export default function StockReportPage() {
                     <td style={{ direction: 'ltr' }}>${fmt((i.stock || 0) * (i.cost_price || 0))}</td>
                     <td>
                       <span className={`badge ${low ? 'badge-danger' : 'badge-success'}`}>{low ? t('status_low') : t('status_ok')}</span>
-                      {isDeadStock && <span className="badge badge-warning" style={{ marginRight: '4px' }}>راكد</span>}
+                      {isDeadStock && <span className="badge badge-warning" style={{ marginRight: '4px' }}>{t('badge_dead_stock')}</span>}
                     </td>
                     <td className="no-print" style={{ display: 'flex', gap: '4px' }}>
-                      <button className="btn btn-sm btn-outline" onClick={() => setMovItem(i)} title="سجل الحركات">📋</button>
-                      <button className="btn btn-sm btn-outline" onClick={() => openAdj(i)} title="تعديل يدوي">⚖️</button>
+                      <button className="btn btn-sm btn-outline" onClick={() => setMovItem(i)} title={t('btn_view_movements')}>📋</button>
+                      <button className="btn btn-sm btn-outline" onClick={() => openAdj(i)} title={t('btn_manual_adj')}>⚖️</button>
                     </td>
                   </tr>
                 )
@@ -141,16 +141,16 @@ export default function StockReportPage() {
         }}>
           <div className="card" style={{ width: '480px', height: '100%', borderRadius: 0, overflowY: 'auto' }}>
             <div className="flex-between mb-4">
-              <h2 style={{ fontWeight: 900 }}>📋 حركات: {movItem.name}</h2>
+              <h2 style={{ fontWeight: 900 }}>📋 {t('stock_movements_of')}: {movItem.name}</h2>
               <button className="btn btn-outline" onClick={() => setMovItem(null)}>✕</button>
             </div>
             <div style={{ marginBottom: '12px', display: 'flex', gap: '12px', fontSize: '13px' }}>
-              <span>المخزون الحالي: <strong>{fmtInt(movItem.stock)}</strong> {movItem.unit}</span>
+              <span>{t('label_current_stock')}: <strong>{fmtInt(movItem.stock)}</strong> {movItem.unit}</span>
             </div>
             {movLoading ? (
-              <div style={{ textAlign: 'center', padding: '20px' }}>جاري التحميل...</div>
+              <div style={{ textAlign: 'center', padding: '20px' }}>{t('loading')}</div>
             ) : movements.length === 0 ? (
-              <div className="empty-state"><div className="icon">📋</div><p>لا توجد حركات مسجلة</p></div>
+              <div className="empty-state"><div className="icon">📋</div><p>{t('no_movements_recorded')}</p></div>
             ) : movements.map(m => (
               <div key={m.id} style={{
                 padding: '10px 0', borderBottom: '1px solid var(--border-light)',
@@ -158,7 +158,7 @@ export default function StockReportPage() {
               }}>
                 <div>
                   <span className="badge" style={{ background: MOVE_TYPE_COLOR[m.movement_type], color: '#fff', marginLeft: '8px' }}>
-                    {MOVE_TYPE_LABEL[m.movement_type] || m.movement_type}
+                    {MOVE_TYPE_KEY[m.movement_type] ? t(MOVE_TYPE_KEY[m.movement_type]) : m.movement_type}
                   </span>
                   {m.notes && <div style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '2px' }}>{m.notes}</div>}
                   <div style={{ color: 'var(--text-muted)', fontSize: '11px' }}>
@@ -178,32 +178,31 @@ export default function StockReportPage() {
       <Modal
         isOpen={adjModal}
         onClose={() => setAdjModal(false)}
-        title="⚖️ تعديل المخزون"
+        title={`⚖️ ${t('adj_modal_title')}`}
         footer={
           <>
-            <button className="btn btn-primary" onClick={handleAdjust}>💾 تطبيق</button>
-            <button className="btn btn-outline" onClick={() => setAdjModal(false)}>إلغاء</button>
+            <button className="btn btn-primary" onClick={handleAdjust}>💾 {t('adj_apply_btn')}</button>
+            <button className="btn btn-outline" onClick={() => setAdjModal(false)}>{t('cancel_btn')}</button>
           </>
         }
       >
         <p style={{ fontWeight: 600, marginBottom: '12px' }}>{adjForm.item_name}</p>
         <div className="form-group">
-          <label className="form-label">الكمية (+ للإضافة، - للخصم)</label>
+          <label className="form-label">{t('lbl_adj_qty')}</label>
           <input
             type="number"
             className="form-control"
             value={adjForm.qty}
             onChange={e => setAdjForm(f => ({ ...f, qty: e.target.value }))}
-            placeholder="مثال: +10 أو -5"
+            placeholder="+10 / -5"
           />
         </div>
         <div className="form-group">
-          <label className="form-label">سبب التعديل</label>
+          <label className="form-label">{t('lbl_adj_reason')}</label>
           <input
             className="form-control"
             value={adjForm.reason}
             onChange={e => setAdjForm(f => ({ ...f, reason: e.target.value }))}
-            placeholder="مثال: جرد دوري، تالف، ..."
           />
         </div>
       </Modal>

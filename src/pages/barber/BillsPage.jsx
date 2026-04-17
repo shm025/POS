@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
-import { useAuth } from '../contexts/AuthContext'
-import { useLang } from '../contexts/LangContext'
-import { useBills } from '../hooks/useBills'
-import Modal from '../components/common/Modal'
-import { fmt, fmtInt } from '../utils/format'
+import { useAuth } from '../../contexts/AuthContext'
+import { useLang } from '../../contexts/LangContext'
+import { useBills } from '../../hooks/useBills'
+import Modal from '../../components/common/Modal'
+import { fmt, fmtInt } from '../../utils/format'
 
 const thisMonth = () => new Date().toISOString().slice(0, 7)
 const EMPTY_FORM = { name:'', amount:0, due_day:1, month:thisMonth() }

@@ -150,7 +150,7 @@ export async function processCheckout(payload) {
           type: 'earn',
           points: points_earned,
           balance_after: newPoints,
-          description: 'نقاط مكتسبة من عملية شراء',
+          description: 'Points earned from purchase',
         })
       }
     }

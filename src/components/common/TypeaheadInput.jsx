@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
+import { useLang } from '../../contexts/LangContext'
 
 export default function TypeaheadInput({ value, onChange, onSelect, items = [], placeholder = '', renderItem, className = '' }) {
+  const { t } = useLang()
   const [open, setOpen] = useState(false)
   const [activeIdx, setActiveIdx] = useState(-1)
   const wrapRef = useRef(null)
@@ -60,7 +62,7 @@ export default function TypeaheadInput({ value, onChange, onSelect, items = [], 
       )}
       {open && filtered.length === 0 && value && (
         <div className="typeahead-dropdown open">
-          <div className="typeahead-item" style={{ color:'var(--text-muted)' }}>لا توجد نتائج</div>
+          <div className="typeahead-item" style={{ color:'var(--text-muted)' }}>{t('no_results')}</div>
         </div>
       )}
     </div>

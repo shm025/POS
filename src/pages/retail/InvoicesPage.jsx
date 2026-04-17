@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom'
-import DocEditor from '../components/documents/DocEditor'
+import DocEditor from '../../components/documents/DocEditor'
 
 export default function InvoicesPage() {
   const { docId } = useParams()
