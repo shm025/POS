@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useLang } from '../../contexts/LangContext'
 
-export default function TypeaheadInput({ value, onChange, onSelect, items = [], placeholder = '', renderItem, className = '' }) {
+export default function TypeaheadInput({ value, onChange, onSelect, items = [], placeholder = '', renderItem, className = '', showAllOnFocus = false }) {
   const { t } = useLang()
   const [open, setOpen] = useState(false)
   const [activeIdx, setActiveIdx] = useState(-1)
@@ -12,7 +12,7 @@ export default function TypeaheadInput({ value, onChange, onSelect, items = [], 
         (it.code||'').toLowerCase().includes(value.toLowerCase()) ||
         (it.name||'').toLowerCase().includes(value.toLowerCase())
       ).slice(0, 10)
-    : []
+    : (showAllOnFocus && open ? items.slice(0, 15) : [])
 
   useEffect(() => {
     function handleClick(e) {
@@ -36,7 +36,7 @@ export default function TypeaheadInput({ value, onChange, onSelect, items = [], 
         className={`form-control typeahead-input ${className}`}
         value={value}
         onChange={e => { onChange(e.target.value); setOpen(true); setActiveIdx(-1) }}
-        onFocus={() => value && setOpen(true)}
+        onFocus={() => { if (value || showAllOnFocus) setOpen(true) }}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         autoComplete="off"

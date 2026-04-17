@@ -48,7 +48,7 @@ export default function DocPrintHeader({ docType, docMeta, subtotal, afterDisc, 
                     </tr>
                     <tr>
                       <td colSpan="3" style={S.cell}>V.Date: <strong>{docMeta.dueDate}</strong></td>
-                      <td style={S.cell}>Rate: <strong>{company?.rate || '89,000'}</strong></td>
+                      <td style={S.cell}>Rate: <strong>{company?.exchange_rate ? Number(company.exchange_rate).toLocaleString() : '—'}</strong></td>
                     </tr>
                   </tbody>
                 </table>
@@ -63,7 +63,7 @@ export default function DocPrintHeader({ docType, docMeta, subtotal, afterDisc, 
                   <tbody>
                     <tr>
                       <td style={{ padding:'1px 0' }}>Page: 1/1</td>
-                      <td style={{ textAlign:'right', padding:'1px 0' }}>Currency: <strong>USD</strong></td>
+                      <td style={{ textAlign:'right', padding:'1px 0' }}>Currency: <strong>{company?.currency || 'USD'}</strong></td>
                     </tr>
                     <tr>
                       <td style={{ padding:'1px 0' }}>Time: {new Date().toTimeString().slice(0,8)}</td>

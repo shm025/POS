@@ -12,7 +12,8 @@ const PAGE_KEY = {
   accounts: 'nav_accounts', 'account-ledger': 'nav_ledger', 'trial-balance': 'nav_trial_balance',
   'journal-entries': 'nav_journal_entries', supplies: 'nav_supplies', bills: 'nav_bills',
   'receipt-voucher': 'nav_receipt', 'payment-voucher': 'nav_payment',
-  'company-settings': 'nav_company_settings',
+  'company-settings': 'nav_company_settings', customers: 'nav_customers',
+  commissions: 'nav_commissions', pos: 'nav_pos',
 }
 
 export default function Sidebar({ isOpen, onClose }) {

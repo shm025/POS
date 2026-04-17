@@ -125,7 +125,7 @@ export default function PaymentVoucherPage() {
                   <tr><td colSpan="5" style={{ textAlign:'center', padding:'20px' }}><div className="loading-spinner"></div></td></tr>
                 ) : vouchers.length === 0 ? (
                   <tr><td colSpan="5" style={{ textAlign:'center', padding:'20px', color:'var(--text-muted)' }}>{t('no_vouchers')}</td></tr>
-                ) : vouchers.slice(0, 15).map((v, i) => (
+                ) : vouchers.map((v, i) => (
                   <tr key={i}>
                     <td style={{ fontSize:'11px', direction:'ltr' }}>{v.number}</td>
                     <td style={{ direction:'ltr' }}>${fmt(v.amount)}</td>

@@ -6,6 +6,7 @@ import { useCustomers } from '../../hooks/useCustomers'
 import { useLang } from '../../contexts/LangContext'
 import { supabase } from '../../lib/supabase'
 import { fmt } from '../../utils/format'
+import TypeaheadInput from '../../components/common/TypeaheadInput'
 
 // selectedId format: 'acc_<uuid>' for chart accounts, 'cust_<uuid>' for customers
 function parseSelection(selectedId) {
@@ -22,6 +23,7 @@ export default function AccountLedgerPage() {
   const { customers, loadCustomers } = useCustomers(company?.id)
 
   const [selectedId, setSelectedId] = useState('')
+  const [searchText, setSearchText] = useState('')
   const [fromDate, setFromDate] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [openingBal, setOpeningBal] = useState(0)
@@ -32,6 +34,11 @@ export default function AccountLedgerPage() {
     loadEntries()
     loadCustomers()
   }, [loadAccounts, loadEntries, loadCustomers])
+
+  const allPartyItems = [
+    ...accounts.map(a => ({ id: `acc_${a.id}`, code: a.code, name: a.name })),
+    ...customers.map(c => ({ id: `cust_${c.id}`, code: '', name: c.name })),
+  ]
 
   const buildLedger = useCallback(async () => {
     if (!selectedId) { setRows([]); setDisplayName(''); setOpeningBal(0); return }
@@ -45,7 +52,6 @@ export default function AccountLedgerPage() {
 
       const relevant = entries.filter(e => e.debitAccId === id || e.creditAccId === id)
 
-      // Split into before-fromDate (opening) and on/after fromDate (rows)
       const before = fromDate ? relevant.filter(e => e.date < fromDate) : []
       const after  = fromDate ? relevant.filter(e => e.date >= fromDate) : relevant
 
@@ -128,23 +134,20 @@ export default function AccountLedgerPage() {
         <div className="grid-3">
           <div className="form-group">
             <label className="form-label">{t('lbl_account')}</label>
-            <select className="form-control" value={selectedId} onChange={e => setSelectedId(e.target.value)}>
-              <option value="">{t('select_account')}</option>
-              {accounts.length > 0 && (
-                <optgroup label={t('lbl_accounts_optgroup')}>
-                  {accounts.map(a => (
-                    <option key={a.id} value={`acc_${a.id}`}>{a.code} - {a.name}</option>
-                  ))}
-                </optgroup>
+            <TypeaheadInput
+              value={searchText}
+              onChange={val => { setSearchText(val); if (!val) setSelectedId('') }}
+              onSelect={item => {
+                setSelectedId(item.id)
+                setSearchText(item.id.startsWith('cust_') ? `👤 ${item.name}` : `${item.code} - ${item.name}`)
+              }}
+              items={allPartyItems}
+              showAllOnFocus={true}
+              placeholder={t('select_account')}
+              renderItem={it => (
+                <><span>{it.id.startsWith('cust_') ? `👤 ${it.name}` : `${it.code} - ${it.name}`}</span></>
               )}
-              {customers.length > 0 && (
-                <optgroup label={t('lbl_customers_optgroup')}>
-                  {customers.map(c => (
-                    <option key={c.id} value={`cust_${c.id}`}>👤 {c.name}</option>
-                  ))}
-                </optgroup>
-              )}
-            </select>
+            />
           </div>
           <div className="form-group">
             <label className="form-label">{t('from_date')}</label>
