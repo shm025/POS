@@ -13,34 +13,87 @@ export default function TradingDashboard() {
   const navigate = useNavigate()
   const [items, setItems] = useState([])
   const [invoices, setInvoices] = useState([])
+  const [topItem, setTopItem] = useState(null)
+  const [topSuppliers, setTopSuppliers] = useState([])
+  const [monthlySales, setMonthlySales] = useState([])
 
   useEffect(() => {
     if (!company?.id) return
+
+    const now = new Date()
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split('T')[0]
+    const lastMonthEnd   = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split('T')[0]
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
+    const sixMonthsAgo   = new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString().split('T')[0]
+
     Promise.all([
       supabase.from('items').select('*').eq('company_id', company.id),
       supabase.from('invoices').select('*').eq('company_id', company.id).eq('doc_type', 'invoices').order('created_at', { ascending: false }),
-    ]).then(([{ data: it }, { data: inv }]) => {
+      // Last month sales invoice IDs (for top item lookup)
+      supabase.from('invoices').select('id').eq('company_id', company.id).in('doc_type', ['invoices', 'sale']).gte('date', lastMonthStart).lte('date', lastMonthEnd),
+      // This month purchases (for top supplier)
+      supabase.from('invoices').select('customer_name, total').eq('company_id', company.id).eq('doc_type', 'purchases').gte('date', thisMonthStart),
+      // Last 6 months sales (for bar chart)
+      supabase.from('invoices').select('date, total').eq('company_id', company.id).in('doc_type', ['invoices', 'sale']).gte('date', sixMonthsAgo),
+    ]).then(async ([{ data: it }, { data: inv }, { data: lastMonthInvs }, { data: purchasesThisMonth }, { data: salesData }]) => {
       setItems((it || []).map(r => ({ ...r, minStock: r.min_stock })))
       setInvoices(inv || [])
+
+      // --- Most sold item last month ---
+      const lastMonthIds = (lastMonthInvs || []).map(i => i.id)
+      if (lastMonthIds.length > 0) {
+        const { data: lineItems } = await supabase
+          .from('invoice_items')
+          .select('item_name, quantity')
+          .in('invoice_id', lastMonthIds)
+        const itemTotals = {}
+        ;(lineItems || []).forEach(li => {
+          itemTotals[li.item_name] = (itemTotals[li.item_name] || 0) + (li.quantity || 0)
+        })
+        const sorted = Object.entries(itemTotals).sort((a, b) => b[1] - a[1])
+        setTopItem(sorted[0] ? { name: sorted[0][0], qty: sorted[0][1] } : null)
+      } else {
+        setTopItem(null)
+      }
+
+      // --- Top supplier this month ---
+      const supplierMap = {}
+      ;(purchasesThisMonth || []).forEach(p => {
+        if (!p.customer_name) return
+        supplierMap[p.customer_name] = (supplierMap[p.customer_name] || 0) + parseFloat(p.total || 0)
+      })
+      setTopSuppliers(Object.entries(supplierMap).sort((a, b) => b[1] - a[1]).slice(0, 5))
+
+      // --- Last 6 months sales bar chart ---
+      const buckets = []
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+        buckets.push({
+          key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+          label: d.toLocaleDateString('ar-LB', { month: 'short' }),
+          total: 0,
+        })
+      }
+      ;(salesData || []).forEach(inv => {
+        const monthKey = inv.date?.substring(0, 7)
+        const bucket = buckets.find(b => b.key === monthKey)
+        if (bucket) bucket.total += parseFloat(inv.total || 0)
+      })
+      setMonthlySales(buckets)
     })
   }, [company?.id])
 
   const totalRevenue = invoices.reduce((s, i) => s + parseFloat(i.total || 0), 0)
-  const paidCount = invoices.filter(i => i.status === 'paid').length
   const lowStock = items.filter(i => i.stock <= i.minStock)
   const totalUnits = items.reduce((s, i) => s + (i.stock || 0), 0)
 
-  // customer_name is the party field in cloud schema
   const custMap = {}
   invoices.forEach(i => { custMap[i.customer_name] = (custMap[i.customer_name] || 0) + parseFloat(i.total || 0) })
   const topCustomers = Object.entries(custMap).sort((a, b) => b[1] - a[1]).slice(0, 5)
   const maxCust = topCustomers[0]?.[1] || 1
 
-  const recentInvoices = invoices.slice(0, 5)
-
-  const chartVals = [65, 80, 72, 90, 85, 95]
-  const chartMax = Math.max(...chartVals)
-  const chartMonths = ['نوفمبر', 'ديسمبر', 'يناير', 'فبراير', 'مارس', 'أبريل']
+  const chartMax = Math.max(...monthlySales.map(b => b.total), 1)
+  const maxSupplier = topSuppliers[0]?.[1] || 1
 
   return (
     <div className="page-view">
@@ -59,9 +112,11 @@ export default function TradingDashboard() {
           <div className="stat-sub">{t('stat_rev_sub')}</div>
         </div>
         <div className="stat-card">
-          <div className="stat-label">{t('paid_invoices')}</div>
-          <div className="stat-value">{fmtInt(paidCount)}</div>
-          <div className="stat-sub">{t('out_of')} {fmtInt(invoices.length)}</div>
+          <div className="stat-label">📦 أكثر صنف مبيعاً (الشهر الماضي)</div>
+          <div className="stat-value" style={{ fontSize:'16px', lineHeight:'1.3' }}>
+            {topItem ? topItem.name : '—'}
+          </div>
+          <div className="stat-sub">{topItem ? `${fmtInt(topItem.qty)} وحدة مباعة` : 'لا توجد بيانات'}</div>
         </div>
         <div className="stat-card">
           <div className="stat-label">{t('inventory_items')}</div>
@@ -78,16 +133,28 @@ export default function TradingDashboard() {
       <div className="grid-2 mt-4">
         <div className="card">
           <div className="card-header">
-            <div className="card-title">📈 {t('sales_chart_title')}</div>
+            <div className="card-title">📈 مبيعات آخر 6 أشهر</div>
           </div>
-          <div className="mini-chart">
-            <div className="mini-bars" id="sales-chart">
-              {chartVals.map((v, i) => (
-                <div key={i} className="mini-bar" style={{ height: `${(v / chartMax * 100)}%` }}></div>
+          <div style={{ padding: '0 12px 12px' }}>
+            <div style={{ display:'flex', alignItems:'flex-end', gap:'6px', height:'120px' }}>
+              {(monthlySales.length === 0 ? Array(6).fill({ total: 0 }) : monthlySales).map((b, i) => (
+                <div
+                  key={i}
+                  style={{
+                    flex: 1,
+                    height: chartMax > 0 ? `${Math.max((b.total / chartMax * 100), b.total > 0 ? 3 : 0).toFixed(1)}%` : '0%',
+                    background: 'var(--primary)',
+                    borderRadius: '3px 3px 0 0',
+                    opacity: 0.75,
+                    transition: 'height 0.4s ease',
+                  }}
+                />
               ))}
             </div>
-            <div className="chart-months">
-              {chartMonths.map((m, i) => <span key={i}>{m}</span>)}
+            <div style={{ display:'flex', gap:'6px', marginTop:'6px' }}>
+              {(monthlySales.length === 0 ? Array(6).fill('—') : monthlySales.map(b => b.label)).map((m, i) => (
+                <span key={i} style={{ flex:1, textAlign:'center', fontSize:'10px', color:'var(--text-muted)' }}>{m}</span>
+              ))}
             </div>
           </div>
         </div>
@@ -113,21 +180,20 @@ export default function TradingDashboard() {
       <div className="grid-2 mt-4">
         <div className="card">
           <div className="card-header">
-            <div className="card-title">🧾 {t('recent_invoices_title')}</div>
-            <button className="btn btn-sm btn-outline" onClick={() => navigate('/invoices-list')}>{t('view_all')}</button>
+            <div className="card-title">🏭 أكثر مورد شراءً (هذا الشهر)</div>
+            <button className="btn btn-sm btn-outline" onClick={() => navigate('/purchases-list')}>{t('view_all')}</button>
           </div>
-          <div id="recent-invoices-list">
-            {recentInvoices.length === 0 ? (
-              <div className="empty-state" style={{ padding:'20px' }}><p style={{ fontSize:'13px' }}>{t('no_invoices')}</p></div>
-            ) : recentInvoices.map(inv => (
-              <div key={inv.id} className="flex-between" style={{ padding:'8px 0', borderBottom:'1px solid var(--border-light)', fontSize:'13px' }}>
-                <div>
-                  <div style={{ fontWeight:600 }}>{inv.number}</div>
-                  <div style={{ color:'var(--text-muted)' }}>{inv.customer_name}</div>
+          <div id="top-suppliers-list">
+            {topSuppliers.length === 0 ? (
+              <div className="empty-state" style={{ padding:'20px' }}><p style={{ fontSize:'13px' }}>{t('no_data')}</p></div>
+            ) : topSuppliers.map(([name, val]) => (
+              <div key={name} style={{ marginBottom:'12px' }}>
+                <div className="flex-between" style={{ fontSize:'13px', marginBottom:'4px' }}>
+                  <span style={{ fontWeight:600 }}>{name}</span>
+                  <span style={{ direction:'ltr' }}>${fmt(val)}</span>
                 </div>
-                <div style={{ textAlign:'left' }}>
-                  <div style={{ fontWeight:700, direction:'ltr' }}>${fmt(inv.total)}</div>
-                  <span className={`badge ${inv.status === 'paid' ? 'badge-success' : 'badge-warning'}`}>{inv.status === 'paid' ? t('status_paid') : t('status_unpaid')}</span>
+                <div className="progress-bar-wrap">
+                  <div className="progress-bar-fill" style={{ width: `${(val / maxSupplier * 100).toFixed(0)}%` }}></div>
                 </div>
               </div>
             ))}

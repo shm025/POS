@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useAccounts } from '../hooks/useAccounts'
 import { useLang } from '../contexts/LangContext'
@@ -10,17 +10,34 @@ export default function TrialBalancePage() {
   const { company } = useAuth()
   const { t, lang } = useLang()
   const { accounts, loadAccounts } = useAccounts(company?.id)
+  const [search, setSearch] = useState('')
 
   useEffect(() => { loadAccounts() }, [loadAccounts])
 
-  const totalDebit = accounts.reduce((s, a) => s + (a.debit || 0), 0)
-  const totalCredit = accounts.reduce((s, a) => s + (a.credit || 0), 0)
+  const filtered = search
+    ? accounts.filter(a =>
+        (a.code || '').toLowerCase().includes(search.toLowerCase()) ||
+        (a.name || '').toLowerCase().includes(search.toLowerCase()))
+    : accounts
+
+  const totalDebit  = filtered.reduce((s, a) => s + (a.debit  || 0), 0)
+  const totalCredit = filtered.reduce((s, a) => s + (a.credit || 0), 0)
 
   return (
     <div className="page-view">
       <div className="flex-between mb-4 no-print">
         <h1 style={{ fontSize:'20px', fontWeight:900, color:'var(--primary)' }}>⚖️ {t('trial_balance_title')}</h1>
         <button className="btn btn-outline" onClick={() => window.print()}>🖨 {t('print_btn')}</button>
+      </div>
+
+      <div className="card no-print" style={{ marginBottom:'12px', padding:'10px 16px' }}>
+        <input
+          className="form-control"
+          placeholder="🔍 ابحث بالكود أو الاسم..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          style={{ maxWidth:'320px' }}
+        />
       </div>
 
       <div className="card">
@@ -34,7 +51,7 @@ export default function TrialBalancePage() {
               <tr><th>{t('th_code')}</th><th>{t('th_name')}</th><th>{t('th_debit')}</th><th>{t('th_credit')}</th></tr>
             </thead>
             <tbody>
-              {accounts.map(a => (
+              {filtered.map(a => (
                 <tr key={a.id}>
                   <td>{a.code}</td>
                   <td>{a.name}</td>
