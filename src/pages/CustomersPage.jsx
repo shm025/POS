@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { useLang } from '../contexts/LangContext'
 import { useCustomers } from '../hooks/useCustomers'
 import Modal from '../components/common/Modal'
 import { fmt, fmtInt } from '../utils/format'
 
 const TIER_BADGE = { bronze:'badge-secondary', silver:'badge-info', gold:'badge-warning', platinum:'badge-success' }
-const TIER_LABEL = { bronze:'برونزي', silver:'فضي', gold:'ذهبي', platinum:'بلاتيني' }
 
 const EMPTY_FORM = {
   name: '', phone: '', email: '', dob: '', notes: '',
@@ -14,13 +14,14 @@ const EMPTY_FORM = {
 
 export default function CustomersPage() {
   const { company } = useAuth()
+  const { t } = useLang()
   const { customers, loading, loadCustomers, saveCustomer, deleteCustomer } = useCustomers(company?.id)
   const [search, setSearch] = useState('')
   const [modal, setModal] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
   const [editId, setEditId] = useState(null)
 
-  useEffect(() => { loadCustomers() }, [company?.id])
+  useEffect(() => { loadCustomers() }, [loadCustomers])
 
   const filtered = search
     ? customers.filter(c =>
@@ -49,9 +50,9 @@ export default function CustomersPage() {
   }
 
   async function handleSave() {
-    if (!form.name.trim()) { return }
-    await saveCustomer(form, editId)
-    setModal(false)
+    if (!form.name.trim()) return
+    const ok = await saveCustomer(form, editId)
+    if (ok) setModal(false)
   }
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
@@ -59,28 +60,35 @@ export default function CustomersPage() {
   const totalPoints = customers.reduce((s, c) => s + (c.loyalty_points || 0), 0)
   const totalSpend = customers.reduce((s, c) => s + parseFloat(c.lifetime_spend || 0), 0)
 
+  const TIER_LABEL = {
+    bronze: t('tier_bronze'),
+    silver: t('tier_silver'),
+    gold: t('tier_gold'),
+    platinum: t('tier_platinum'),
+  }
+
   return (
     <div className="page-view">
       <div className="flex-between mb-4">
-        <h1 style={{ fontSize: '20px', fontWeight: 900, color: 'var(--primary)' }}>👥 العملاء</h1>
-        <button className="btn btn-primary" onClick={openNew}>➕ عميل جديد</button>
+        <h1 style={{ fontSize: '20px', fontWeight: 900, color: 'var(--primary)' }}>👥 {t('customers_title')}</h1>
+        <button className="btn btn-primary" onClick={openNew}>➕ {t('new_customer_btn')}</button>
       </div>
 
       <div className="stats-grid">
         <div className="stat-card">
-          <div className="stat-label">إجمالي العملاء</div>
+          <div className="stat-label">{t('cust_total')}</div>
           <div className="stat-value">{fmtInt(customers.length)}</div>
         </div>
         <div className="stat-card">
-          <div className="stat-label">إجمالي النقاط الموزعة</div>
+          <div className="stat-label">{t('cust_total_points')}</div>
           <div className="stat-value">{fmtInt(totalPoints)}</div>
         </div>
         <div className="stat-card">
-          <div className="stat-label">إجمالي الإنفاق</div>
+          <div className="stat-label">{t('cust_total_spend')}</div>
           <div className="stat-value" style={{ direction: 'ltr' }}>${fmt(totalSpend)}</div>
         </div>
         <div className="stat-card">
-          <div className="stat-label">مشتركون واتساب</div>
+          <div className="stat-label">{t('cust_whatsapp_subs')}</div>
           <div className="stat-value">{fmtInt(customers.filter(c => c.whatsapp_opted_in).length)}</div>
         </div>
       </div>
@@ -89,7 +97,7 @@ export default function CustomersPage() {
         <div className="search-bar no-print">
           <input
             className="form-control"
-            placeholder="🔍 بحث بالاسم أو الهاتف..."
+            placeholder={t('cust_search_placeholder')}
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -98,22 +106,22 @@ export default function CustomersPage() {
           <table>
             <thead>
               <tr>
-                <th>الاسم</th>
-                <th>الهاتف</th>
-                <th>البريد</th>
-                <th>النقاط</th>
-                <th>الفئة</th>
-                <th>إجمالي الزيارات</th>
-                <th>إجمالي الإنفاق</th>
-                <th>واتساب</th>
-                <th className="no-print">إجراء</th>
+                <th>{t('lbl_name')}</th>
+                <th>{t('lbl_phone')}</th>
+                <th>{t('lbl_email')}</th>
+                <th>{t('cust_th_points')}</th>
+                <th>{t('cust_th_tier')}</th>
+                <th>{t('cust_th_visits')}</th>
+                <th>{t('cust_th_spend')}</th>
+                <th>{t('cust_th_whatsapp')}</th>
+                <th className="no-print">{t('th_action')}</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr><td colSpan="9" style={{ textAlign: 'center', padding: '20px' }}><div className="loading-spinner"></div></td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan="9"><div className="empty-state"><div className="icon">👥</div><p>لا يوجد عملاء</p></div></td></tr>
+                <tr><td colSpan="9"><div className="empty-state"><div className="icon">👥</div><p>{t('no_customers')}</p></div></td></tr>
               ) : filtered.map(c => (
                 <tr key={c.id}>
                   <td style={{ fontWeight: 600 }}>{c.name}</td>
@@ -138,34 +146,34 @@ export default function CustomersPage() {
       <Modal
         isOpen={modal}
         onClose={() => setModal(false)}
-        title={editId ? '✏️ تعديل العميل' : '➕ عميل جديد'}
+        title={editId ? `✏️ ${t('edit_customer_title')}` : `➕ ${t('new_customer_title')}`}
         footer={
           <>
-            <button className="btn btn-primary" onClick={handleSave}>💾 حفظ</button>
-            <button className="btn btn-outline" onClick={() => setModal(false)}>إلغاء</button>
+            <button className="btn btn-primary" onClick={handleSave}>💾 {t('btn_save')}</button>
+            <button className="btn btn-outline" onClick={() => setModal(false)}>{t('btn_cancel')}</button>
           </>
         }
       >
         <div className="grid-2">
           <div className="form-group">
-            <label className="form-label">الاسم *</label>
+            <label className="form-label">{t('lbl_cust_name')} *</label>
             <input className="form-control" value={form.name} onChange={e => set('name', e.target.value)} />
           </div>
           <div className="form-group">
-            <label className="form-label">الهاتف</label>
+            <label className="form-label">{t('lbl_phone')}</label>
             <input className="form-control" value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="e.g. 03123456" />
           </div>
           <div className="form-group">
-            <label className="form-label">البريد الإلكتروني</label>
+            <label className="form-label">{t('lbl_email')}</label>
             <input className="form-control" value={form.email} onChange={e => set('email', e.target.value)} />
           </div>
           <div className="form-group">
-            <label className="form-label">تاريخ الميلاد</label>
+            <label className="form-label">{t('lbl_dob')}</label>
             <input type="date" className="form-control" value={form.dob} onChange={e => set('dob', e.target.value)} />
           </div>
         </div>
         <div className="form-group">
-          <label className="form-label">ملاحظات</label>
+          <label className="form-label">{t('lbl_notes')}</label>
           <textarea className="form-control" rows="2" value={form.notes} onChange={e => set('notes', e.target.value)} />
         </div>
         <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -175,7 +183,7 @@ export default function CustomersPage() {
             checked={form.whatsapp_opted_in}
             onChange={e => set('whatsapp_opted_in', e.target.checked)}
           />
-          <label htmlFor="whatsapp_opted_in" className="form-label" style={{ margin: 0 }}>موافق على استقبال رسائل واتساب</label>
+          <label htmlFor="whatsapp_opted_in" className="form-label" style={{ margin: 0 }}>{t('lbl_whatsapp_consent')}</label>
         </div>
       </Modal>
     </div>
