@@ -51,5 +51,33 @@ export function useJournalEntries(companyId) {
     await loadEntries()
   }, [loadEntries, t])
 
-  return { entries, loading, loadEntries, saveEntry, deleteEntry }
+  const saveBatchEntries = useCallback(async (date, lines) => {
+    const valid = lines.filter(l => l.debitAccId && l.creditAccId && parseFloat(l.amount) > 0)
+    if (!valid.length) { notify('أضف قيداً واحداً على الأقل', 'error'); return false }
+
+    // Replace all entries for this date
+    await supabase.from('journal_entries').delete().eq('company_id', companyId).eq('date', date)
+    await supabase.from('journal_entries').insert(
+      valid.map(l => ({
+        company_id: companyId,
+        date,
+        description: l.desc || '',
+        debit_acc_id:  l.debitAccId,
+        credit_acc_id: l.creditAccId,
+        amount: parseFloat(l.amount),
+      }))
+    )
+    notify(t('notify_saved'))
+    await loadEntries()
+    return true
+  }, [companyId, loadEntries, t])
+
+  const deleteDate = useCallback(async (date) => {
+    if (!confirm('حذف جميع قيود هذا التاريخ؟')) return
+    await supabase.from('journal_entries').delete().eq('company_id', companyId).eq('date', date)
+    notify(t('notify_deleted'))
+    await loadEntries()
+  }, [companyId, loadEntries, t])
+
+  return { entries, loading, loadEntries, saveEntry, deleteEntry, saveBatchEntries, deleteDate }
 }

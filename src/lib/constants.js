@@ -1,3 +1,8 @@
+export const BUSINESS_EMAILS = {
+  retail: 'retail@test.com',
+  barber: 'barber@test.com',
+}
+
 export const DOC_TYPES = {
   invoices:          { label_ar:'فاتورة مبيع',      label_en:'Sales Invoice',      prefix:'INV', store:'invoices',      partyLabel_ar:'العميل',  partyLabel_en:'Customer',  icon:'🧾', parties:['شركة الأمل التجارية','مؤسسة النجاح','شركة الخليج','محلات السعادة','مجموعة الفجر','التجارية للأعمال'] },
   'sales-return':    { label_ar:'مرتجع مبيعات',     label_en:'Sales Return',       prefix:'SR',  store:'salesReturns',  partyLabel_ar:'العميل',  partyLabel_en:'Customer',  icon:'↩️', parties:['شركة الأمل التجارية','مؤسسة النجاح','شركة الخليج','محلات السعادة'] },
@@ -9,14 +14,12 @@ export const DOC_TYPES = {
 export const SIDEBAR_MENUS = {
   barber: [
     { icon:'📊', label:'لوحة التحكم',     page:'dashboard' },
-    { icon:'🖥️', label:'نقطة البيع POS',  page:'pos' },
     { icon:'✂️', label:'الخدمات',         page:'services' },
     { icon:'👥', label:'الموظفون',         page:'employees' },
     { icon:'💰', label:'العمولات',         page:'commissions' },
     { icon:'📅', label:'الحجوزات',         page:'reservations' },
-    { icon:'👤', label:'العملاء',          page:'customers' },
-    { icon:'🧾', label:'فاتورة مبيع',      page:'invoices' },
-    { icon:'📋', label:'سجل الفواتير',     page:'invoices-list' },
+    { icon:'🛒', label:'فاتورة شراء',      page:'purchases' },
+    { icon:'📋', label:'سجل المشتريات',    page:'purchases-list' },
     { icon:'🧴', label:'المستلزمات',       page:'supplies' },
     { icon:'💡', label:'الفواتير الثابتة', page:'bills' },
     { icon:'💵', label:'سند قبض',          page:'receipt-voucher' },
@@ -25,8 +28,7 @@ export const SIDEBAR_MENUS = {
   ],
   retail: [
     { icon:'📊', label:'لوحة التحكم',      page:'dashboard' },
-    { icon:'🖥️', label:'نقطة البيع POS',  page:'pos' },
-    { icon:'👤', label:'العملاء',          page:'customers' },
+    { icon:'👤', label:'الحسابات',          page:'customers' },
     { icon:'🧾', label:'فاتورة مبيع',      page:'invoices' },
     { icon:'📋', label:'سجل الفواتير',     page:'invoices-list' },
     { icon:'↩️', label:'مرتجع مبيعات',    page:'sales-return' },

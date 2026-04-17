@@ -24,7 +24,7 @@ export default function DocEditor({ docType, docId }) {
   const {
     docMeta, docItems, allItems, partyCache, loading,
     subtotal, afterDisc, total, totalQty, discount, tax,
-    loadDoc, loadPartyCache, addRow, removeRow, updateRow, selectItem, updateMeta, saveDoc,
+    loadDoc, loadPartyCache, addRow, removeRow, updateRow, selectItem, updateMeta, saveDoc, duplicateDoc,
   } = useDocuments(company?.id)
 
   const cfg = DOC_TYPES[docType] || DOC_TYPES.invoices
@@ -51,6 +51,7 @@ export default function DocEditor({ docType, docId }) {
   return (
     <div className="page-view">
       <DocPrintHeader
+        docType={docType}
         docMeta={docMeta} subtotal={subtotal} afterDisc={afterDisc}
         total={total} totalQty={totalQty} discount={discount} tax={tax}
       />
@@ -58,6 +59,7 @@ export default function DocEditor({ docType, docId }) {
       <div className="flex-between mb-4 no-print">
         <h1 style={{ fontSize:'20px', fontWeight:900, color:'var(--primary)' }}>{cfg.icon} {t(typeKeys.labelKey)}</h1>
         <div className="flex gap-2">
+          <button className="btn btn-outline" onClick={duplicateDoc}>📋 {t('duplicate_btn') || 'تكرار'}</button>
           <button className="btn btn-outline" onClick={() => window.print()}>🖨 {t('print_btn')}</button>
           <button className="btn btn-success" onClick={saveDoc}>💾 {t('save_btn')}</button>
         </div>

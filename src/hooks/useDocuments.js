@@ -225,9 +225,27 @@ export function useDocuments(companyId) {
     setTimeout(() => loadDoc(docType, invoiceUuid), 300)
   }
 
+  async function duplicateDoc() {
+    const cfg = DOC_TYPES[docType]
+    const { count } = await supabase
+      .from('invoices')
+      .select('*', { count: 'exact', head: true })
+      .eq('company_id', companyId)
+      .eq('doc_type', docType)
+    const newNumber = `${cfg.prefix}-${new Date().getFullYear()}-${String((count || 0) + 1).padStart(3, '0')}`
+    setDocId(null)
+    setDocMeta(prev => ({
+      ...prev,
+      number: newNumber,
+      date: new Date().toISOString().split('T')[0],
+      status: 'unpaid',
+    }))
+    notify('📋 ' + t('doc_duplicated') || '📋 تم نسخ المستند — احفظ لإنشاء نسخة جديدة')
+  }
+
   return {
     docType, docId, docMeta, docItems, allItems, partyCache,
     loading, subtotal, afterDisc, total, totalQty, discount, tax,
-    loadDoc, loadPartyCache, addRow, removeRow, updateRow, selectItem, updateMeta, saveDoc,
+    loadDoc, loadPartyCache, addRow, removeRow, updateRow, selectItem, updateMeta, saveDoc, duplicateDoc,
   }
 }
