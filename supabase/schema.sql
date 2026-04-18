@@ -272,6 +272,10 @@ DO $$ BEGIN
   ALTER TABLE customers ADD COLUMN IF NOT EXISTS lifetime_spend numeric(14,2) DEFAULT 0;
 EXCEPTION WHEN duplicate_column THEN NULL; END $$;
 
+DO $$ BEGIN
+  ALTER TABLE customers ADD COLUMN IF NOT EXISTS whatsapp_opted_in boolean DEFAULT false;
+EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+
 
 CREATE TABLE IF NOT EXISTS loyalty_transactions (
   id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -64,7 +64,6 @@ export default function CompanySettingsPage() {
       exchange_rate: parseFloat(form.exchange_rate) || 89500,
       exchange_rate_updated_at: new Date().toISOString(),
       timezone: form.timezone,
-      plan: form.plan,
     }).eq('id', company.id)
 
     if (error) {

@@ -3,122 +3,173 @@ import { useLang } from '../../contexts/LangContext'
 import { fmt } from '../../utils/format'
 import { numberToArabicWords } from '../../utils/format'
 
-const DOC_TITLE_KEY = {
-  invoices:           'doc_type_invoices',
-  'sales-return':     'doc_type_sales_return',
-  orders:             'doc_type_orders',
-  purchases:          'doc_type_purchases',
-  'purchases-return': 'doc_type_purchases_return',
+const DOC_LABEL = {
+  invoices:           { ar: 'مبيع بالحساب',    en: 'Sales Invoice'      },
+  'sales-return':     { ar: 'مرتجع مبيعات',    en: 'Sales Return'       },
+  orders:             { ar: 'عرض سعر',          en: 'Quotation / Order'  },
+  purchases:          { ar: 'فاتورة مشتريات',   en: 'Purchase Invoice'   },
+  'purchases-return': { ar: 'مرتجع مشتريات',   en: 'Purchase Return'    },
 }
 
-const S = {
-  cell:  { border:'1px solid #999', padding:'2px 5px', fontSize:'9px' },
-  cellB: { border:'1px solid #999', padding:'2px 5px', fontSize:'9px', fontWeight:700 },
-  label: { border:'1px solid #999', padding:'2px 5px', fontSize:'9px', background:'#efefef', fontWeight:700 },
-}
+/* shared cell styles */
+const td  = { border:'1px solid #999', padding:'3px 6px', fontSize:'10px' }
+const tdB = { border:'1px solid #999', padding:'3px 6px', fontSize:'10px', fontWeight:700 }
+const tdG = { border:'1px solid #999', padding:'3px 6px', fontSize:'10px', background:'#e8e8e8' }
 
 export default function DocPrintHeader({ docType, docMeta, subtotal, afterDisc, total, totalQty, discount, tax }) {
   const { company } = useAuth()
-  const { t } = useLang()
+  const { t }       = useLang()
+
+  const label   = DOC_LABEL[docType] || { ar: '', en: docType }
+  const rate    = parseFloat(company?.exchange_rate || 89500)
+  const totalLL = Math.round(total * rate)
+  const now     = new Date()
+  const timeStr = now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit', second:'2-digit' })
+  const dateStr = docMeta.date || now.toLocaleDateString('en-GB')
 
   return (
     <>
-      {/* ── Compact invoice header ── */}
+      {/* ═══════════════════════════════════════════
+          PRINT HEADER
+      ═══════════════════════════════════════════ */}
       <div className="doc-print-header">
-        <table style={{ width:'100%', borderCollapse:'collapse', border:'1px solid #999', fontSize:'9px' }}>
+
+        {/* Company name + phones — above the table, no border */}
+        <div style={{ marginBottom:'4px' }}>
+          <div style={{ fontSize:'15px', fontWeight:900, color:'#000' }}>
+            {company?.name || 'Company'}
+            {company?.name_en ? <span style={{ fontSize:'12px', fontWeight:400, marginRight:'10px', color:'#444' }}> — {company.name_en}</span> : null}
+          </div>
+          {company?.phone && (
+            <div style={{ fontSize:'10px', color:'#444', marginTop:'2px', direction:'ltr' }}>{company.phone}</div>
+          )}
+          {company?.address && (
+            <div style={{ fontSize:'10px', color:'#555' }}>{company.address}</div>
+          )}
+        </div>
+
+        {/* ── Main info table ── */}
+        <table style={{ width:'100%', borderCollapse:'collapse', border:'1px solid #999' }}>
           <tbody>
+
+            {/* Row 1: Acc No | VAT # | Order No | Ref No */}
             <tr>
-              {/* Left — company info */}
-              <td style={{ width:'55%', verticalAlign:'top', padding:'5px 8px', borderRight:'1px solid #999' }}>
-                <div style={{ fontSize:'12px', fontWeight:900, color:'#000', marginBottom:'2px' }}>{company?.name || 'CATALAN POS'}</div>
-                {company?.address && <div style={{ fontSize:'9px', color:'#333' }}>{company.address}</div>}
-                {company?.phone  && <div style={{ fontSize:'9px', color:'#333' }}>{company.phone}</div>}
-
-                <table style={{ borderCollapse:'collapse', border:'1px solid #999', width:'100%', marginTop:'4px' }}>
-                  <tbody>
-                    <tr>
-                      <td style={S.cell}>Acc. No.: <strong>{company?.acc_no || '4100026'}</strong></td>
-                      <td style={S.cell}>VAT #:</td>
-                      <td style={S.cell}>Order No.:</td>
-                      <td style={S.cellB}>Ref.: <strong id="print-ref">{docMeta.number}</strong></td>
-                    </tr>
-                    <tr>
-                      <td colSpan="3" style={{ ...S.cell, fontSize:'11px', fontWeight:700, textAlign:'center' }} id="print-customer">{docMeta.party}</td>
-                      <td style={S.cell}>Date: <strong id="print-date">{docMeta.date}</strong></td>
-                    </tr>
-                    <tr>
-                      <td colSpan="3" style={S.cell}>V.Date: <strong>{docMeta.dueDate}</strong></td>
-                      <td style={S.cell}>Rate: <strong>{company?.exchange_rate ? Number(company.exchange_rate).toLocaleString() : '—'}</strong></td>
-                    </tr>
-                  </tbody>
-                </table>
+              <td style={{ ...td, width:'22%' }}>
+                Acc. No. : <strong>{company?.acc_no || '—'}</strong>
               </td>
-
-              {/* Right — document type + meta */}
-              <td style={{ width:'45%', verticalAlign:'top', padding:'5px 8px' }}>
-                <div style={{ textAlign:'center', fontSize:'14px', fontWeight:900, color:'#000', borderBottom:'1px solid #000', paddingBottom:'3px', marginBottom:'4px' }}>
-                  {DOC_TITLE_KEY[docType] ? t(DOC_TITLE_KEY[docType]) : t('no_data')}
-                </div>
-                <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'9px' }}>
-                  <tbody>
-                    <tr>
-                      <td style={{ padding:'1px 0' }}>Page: 1/1</td>
-                      <td style={{ textAlign:'right', padding:'1px 0' }}>Currency: <strong>{company?.currency || 'USD'}</strong></td>
-                    </tr>
-                    <tr>
-                      <td style={{ padding:'1px 0' }}>Time: {new Date().toTimeString().slice(0,8)}</td>
-                      <td style={{ textAlign:'right', padding:'1px 0' }}>Sales Man: <strong>USER_1</strong></td>
-                    </tr>
-                  </tbody>
-                </table>
+              <td style={{ ...td, width:'22%' }}>VAT # :</td>
+              <td style={{ ...td, width:'22%' }}>Order No. :</td>
+              <td style={{ ...tdB, width:'34%', color:'#1a1a1a', textAlign:'right', direction:'ltr' }}>
+                Ref. No. : <span id="print-ref">{docMeta.number}</span>
               </td>
             </tr>
+
+            {/* Row 2: Customer (3 cols) | Date */}
+            <tr>
+              <td colSpan="3" style={{ ...td, textAlign:'center', fontSize:'13px', fontWeight:700 }} id="print-customer">
+                {docMeta.party || '—'}
+              </td>
+              <td style={td}>Date : <strong>{dateStr}</strong></td>
+            </tr>
+
+            {/* Row 3: empty | V.Date */}
+            <tr>
+              <td colSpan="3" style={{ ...td, height:'16px' }}>&nbsp;</td>
+              <td style={td}>V.Date : <strong>{docMeta.dueDate || dateStr}</strong></td>
+            </tr>
+
+            {/* Row 4: warehouse/notes | Rate */}
+            <tr>
+              <td colSpan="3" style={{ ...td, fontSize:'9px', color:'#555' }}>
+                {docMeta.warehouse ? `Warehouse: ${docMeta.warehouse}` : '-'}
+              </td>
+              <td style={td}>Rate : <strong>{rate.toLocaleString()}</strong></td>
+            </tr>
+
+            {/* Row 5: Page | Doc type (bold, bilingual) | Sales Man + Time */}
+            <tr>
+              <td style={{ ...tdG, fontSize:'10px' }}>Page : 1/1</td>
+              <td colSpan="2" style={{ ...tdG, textAlign:'center', fontSize:'12px', fontWeight:900 }}>
+                {label.ar}
+              </td>
+              <td style={td}>
+                <div>Sales Man : <strong>USER_1</strong></div>
+                <div>Time : {timeStr}</div>
+                <div>Currency : <strong>{company?.currency || 'USD'}</strong></div>
+              </td>
+            </tr>
+
           </tbody>
         </table>
       </div>
 
-      {/* ── Compact totals footer ── */}
+      {/* ═══════════════════════════════════════════
+          PRINT FOOTER  (rendered after items via CSS order)
+      ═══════════════════════════════════════════ */}
       <table className="print-totals-table" style={{ width:'100%', marginTop:'6px', borderCollapse:'collapse' }}>
         <tbody>
-          <tr>
-            <td style={{ width:'60%', verticalAlign:'top', paddingLeft:0, paddingRight:'6px' }}>
-              <table style={{ width:'100%', borderCollapse:'collapse', border:'1px solid #999' }}>
-                <tbody>
-                  <tr><td style={{ ...S.label, textAlign:'center' }}>Amount in Words</td></tr>
-                  <tr><td style={{ ...S.cell, fontSize:'9px' }}>{numberToArabicWords(total)} {t('amount_in_words_suffix')}</td></tr>
-                </tbody>
-              </table>
-              <table style={{ width:'100%', borderCollapse:'collapse', border:'1px solid #999', marginTop:'4px' }}>
-                <tbody>
-                  <tr>
-                    <td style={S.cell}>Old Balance</td>
-                    <td style={{ ...S.cell, textAlign:'right', direction:'ltr' }}>0.00</td>
-                  </tr>
-                  <tr>
-                    <td style={S.cell}>New Balance</td>
-                    <td style={{ ...S.cellB, textAlign:'right', direction:'ltr' }}>0.00</td>
-                  </tr>
-                </tbody>
-              </table>
-            </td>
 
-            <td style={{ width:'40%', verticalAlign:'top', paddingRight:0 }}>
-              <table style={{ width:'100%', borderCollapse:'collapse', border:'1px solid #999' }}>
-                <tbody>
-                  <tr><td style={S.cell}>Total Qty</td>      <td style={{ ...S.cell, textAlign:'right' }}>{fmt(totalQty, 0)}</td></tr>
-                  <tr><td style={S.cell}>Total Invoice</td>  <td style={{ ...S.cell, textAlign:'right', direction:'ltr' }}>{fmt(subtotal)}</td></tr>
-                  <tr><td style={S.cell}>Discount %</td>     <td style={{ ...S.cell, textAlign:'right' }}>{fmt(discount, 2)}%</td></tr>
-                  <tr><td style={S.cell}>Gross Total</td>    <td style={{ ...S.cell, textAlign:'right', direction:'ltr' }}>{fmt(afterDisc)}</td></tr>
-                  <tr><td style={S.cell}>VAT %</td>          <td style={{ ...S.cell, textAlign:'right' }}>{fmt(tax, 2)}%</td></tr>
-                  <tr style={{ background:'#e8e8e8' }}>
-                    <td style={{ ...S.cellB, fontSize:'10px' }}>Net Total</td>
-                    <td style={{ ...S.cellB, fontSize:'11px', textAlign:'right', direction:'ltr' }}>{fmt(total)}</td>
-                  </tr>
-                </tbody>
-              </table>
-              <div style={{ marginTop:'8px', fontSize:'9px' }}><strong>Signature:</strong></div>
+          {/* Signature label row */}
+          <tr>
+            <td colSpan="5" style={{ ...td, fontWeight:700, fontSize:'11px' }}>Signature</td>
+            <td colSpan="3" style={{ ...td, textAlign:'right', fontWeight:700, fontSize:'11px' }}>
+              {company?.currency || 'USD'}
             </td>
           </tr>
+
+          {/* Total Qty + Total Invoice */}
+          <tr>
+            <td colSpan="2" style={{ ...td, color:'transparent' }}>—</td>
+            <td style={{ ...tdG, textAlign:'center', fontSize:'10px' }}>
+              Total Qty : <strong>{fmt(totalQty, 0)}</strong>
+            </td>
+            <td style={tdG}>Total Invoice</td>
+            <td colSpan="2" style={{ ...td, textAlign:'right', direction:'ltr' }}>{fmt(subtotal)}</td>
+            <td colSpan="2" style={{ ...td }}></td>
+          </tr>
+
+          {/* USD | L.L labels + Discount */}
+          <tr>
+            <td style={{ ...tdG, textAlign:'center' }}>USD</td>
+            <td style={{ ...tdG, textAlign:'center' }}>L.L</td>
+            <td style={td}></td>
+            <td style={tdG}>Discount %</td>
+            <td colSpan="2" style={{ ...td, textAlign:'right' }}>{fmt(discount, 2)}</td>
+            <td colSpan="2" style={td}></td>
+          </tr>
+
+          {/* Old Balance */}
+          <tr>
+            <td style={tdG}>Old Balance</td>
+            <td style={{ ...td, textAlign:'right', direction:'ltr' }}>0.00</td>
+            <td style={{ ...td, textAlign:'right', direction:'ltr' }}>0.00</td>
+            <td style={tdG}>Gross Total</td>
+            <td colSpan="2" style={{ ...td, textAlign:'right', direction:'ltr' }}>{fmt(afterDisc)}</td>
+            <td colSpan="2" style={td}></td>
+          </tr>
+
+          {/* New Balance */}
+          <tr>
+            <td style={tdG}>New Balance</td>
+            <td style={{ ...td, textAlign:'right', direction:'ltr' }}>{fmt(total)}</td>
+            <td style={{ ...td, textAlign:'right', direction:'ltr' }}>{totalLL.toLocaleString()}</td>
+            <td style={tdG}>VAT %</td>
+            <td style={{ ...td, textAlign:'right' }}>{fmt(tax, 2)}</td>
+            <td style={{ ...tdB, textAlign:'center', background:'#d0d0d0', fontSize:'10px' }}>
+              Net Total Invoice
+            </td>
+            <td colSpan="2" style={{ ...tdB, textAlign:'right', direction:'ltr', fontSize:'12px', background:'#d0d0d0' }}>
+              {fmt(total)}
+            </td>
+          </tr>
+
+          {/* Amount in Arabic words — full width */}
+          <tr>
+            <td colSpan="8" style={{ ...td, textAlign:'right', fontSize:'10px', fontWeight:600 }}>
+              {numberToArabicWords(total)} {t('amount_in_words_suffix')}
+            </td>
+          </tr>
+
         </tbody>
       </table>
     </>
