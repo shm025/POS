@@ -28,6 +28,9 @@ CREATE TABLE IF NOT EXISTS companies (
   timezone                text DEFAULT 'Asia/Beirut',
   plan                    text DEFAULT 'starter',
   business_type           text DEFAULT 'retail',   -- 'retail' | 'barber'
+  currency                text DEFAULT 'USD',
+  period_start            date DEFAULT '2026-01-01',
+  period_end              date DEFAULT '2026-12-31',
   created_at              timestamptz DEFAULT now()
 );
 
@@ -50,6 +53,18 @@ EXCEPTION WHEN duplicate_column THEN NULL; END $$;
 
 DO $$ BEGIN
   ALTER TABLE companies ADD COLUMN IF NOT EXISTS plan text DEFAULT 'starter';
+EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE companies ADD COLUMN IF NOT EXISTS currency text DEFAULT 'USD';
+EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE companies ADD COLUMN IF NOT EXISTS period_start date DEFAULT '2026-01-01';
+EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE companies ADD COLUMN IF NOT EXISTS period_end date DEFAULT '2026-12-31';
 EXCEPTION WHEN duplicate_column THEN NULL; END $$;
 
 
@@ -255,6 +270,10 @@ EXCEPTION WHEN duplicate_column THEN NULL; END $$;
 
 DO $$ BEGIN
   ALTER TABLE customers ADD COLUMN IF NOT EXISTS lifetime_spend numeric(14,2) DEFAULT 0;
+EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE customers ADD COLUMN IF NOT EXISTS whatsapp_opted_in boolean DEFAULT false;
 EXCEPTION WHEN duplicate_column THEN NULL; END $$;
 
 

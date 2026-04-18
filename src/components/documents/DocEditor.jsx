@@ -83,6 +83,7 @@ export default function DocEditor({ docType, docId }) {
               onSelect={item => updateMeta('party', item.name)}
               items={partyItems}
               placeholder={t('doc_party_placeholder')}
+              showAllOnFocus={true}
               renderItem={it => (
                 <><span>{it.name}</span><span className="item-code">{it.code || ''}</span></>
               )}

@@ -6,21 +6,27 @@ import { useSuppliers } from '../hooks/useSuppliers'
 import { useAuth } from '../contexts/AuthContext'
 import { useLang } from '../contexts/LangContext'
 import TypeaheadInput from '../components/common/TypeaheadInput'
+import Modal from '../components/common/Modal'
 import { fmt } from '../utils/format'
+import { printVoucherWindow } from '../utils/printVoucher'
+
+const EMPTY_FORM = {
+  number: '', amount: 0,
+  date: new Date().toISOString().split('T')[0],
+  debitAcc: '', creditAcc: '', desc: '',
+}
 
 export default function PaymentVoucherPage() {
   const { company } = useAuth()
   const { t } = useLang()
-  const { vouchers, loading, loadVouchers, saveVoucher } = useVouchers(company?.id)
+  const { vouchers, loading, loadVouchers, saveVoucher, updateVoucher, deleteVoucher } = useVouchers(company?.id)
   const { accounts, loadAccounts } = useAccounts(company?.id)
   const { customers, loadCustomers } = useCustomers(company?.id)
   const { suppliers, loadSuppliers } = useSuppliers(company?.id)
 
-  const [form, setForm] = useState({
-    number: '', amount: 0,
-    date: new Date().toISOString().split('T')[0],
-    debitAcc: '', creditAcc: '', desc: '',
-  })
+  const [form, setForm]           = useState(EMPTY_FORM)
+  const [editId, setEditId]       = useState(null)
+  const [modalOpen, setModalOpen] = useState(false)
 
   useEffect(() => {
     loadAccounts()
@@ -33,112 +39,146 @@ export default function PaymentVoucherPage() {
 
   async function handleSave() {
     if (!form.amount || !form.debitAcc || !form.creditAcc) return
-    await saveVoucher({ ...form, type: 'payment', party: form.debitAcc, method: `${form.debitAcc} | ${form.creditAcc}`, amount: parseFloat(form.amount) || 0 })
-    const v = await loadVouchers('payment')
-    setForm(p => ({ ...p, amount: 0, desc: '', debitAcc: '', creditAcc: '', number: `PAY-${new Date().getFullYear()}-${String(v.length + 1).padStart(3, '0')}` }))
+    const payload = { ...form, type: 'payment', party: form.debitAcc, method: `${form.debitAcc} | ${form.creditAcc}`, amount: parseFloat(form.amount) || 0 }
+    if (editId) {
+      const ok = await updateVoucher(editId, payload)
+      if (ok) closeModal()
+    } else {
+      await saveVoucher(payload)
+      const v = await loadVouchers('payment')
+      setForm({ ...EMPTY_FORM, number: `PAY-${new Date().getFullYear()}-${String(v.length + 1).padStart(3, '0')}` })
+      setModalOpen(false)
+    }
+  }
+
+  function openEdit(v) {
+    const [debit, credit] = (v.method || '').split(' | ')
+    setForm({
+      number:    v.number || '',
+      amount:    v.amount || 0,
+      date:      v.date   || new Date().toISOString().split('T')[0],
+      debitAcc:  debit   || v.party || '',
+      creditAcc: credit  || '',
+      desc:      v.description || '',
+    })
+    setEditId(v.id)
+    setModalOpen(true)
+  }
+
+  function closeModal() {
+    setEditId(null)
+    setModalOpen(false)
+    loadVouchers('payment').then(v =>
+      setForm({ ...EMPTY_FORM, number: `PAY-${new Date().getFullYear()}-${String(v.length + 1).padStart(3, '0')}` })
+    )
   }
 
   const f = k => e => setForm(p => ({ ...p, [k]: e.target.value }))
 
   const partyItems = [
-    ...accounts.map(a  => ({ id: a.id,  code: a.code,    name: a.name, _type: 'account'  })),
-    ...customers.map(c => ({ id: c.id,  code: c.code||'', name: c.name, _type: 'customer' })),
-    ...suppliers.map(s => ({ id: s.id,  code: s.code||'', name: s.name, _type: 'supplier' })),
+    ...accounts.map(a  => ({ id: a.id, code: a.code,    name: a.name, _type: 'account'  })),
+    ...customers.map(c => ({ id: c.id, code: c.code||'', name: c.name, _type: 'customer' })),
+    ...suppliers.map(s => ({ id: s.id, code: s.code||'', name: s.name, _type: 'supplier' })),
   ]
-
   const typeLabel = { account: t('type_account'), customer: t('type_customer'), supplier: t('type_supplier') }
 
   return (
     <div className="page-view">
-      <div className="flex-between mb-4 no-print">
+      <div className="flex-between mb-4">
         <h1 style={{ fontSize:'20px', fontWeight:900, color:'var(--primary)' }}>💸 {t('payment_title')}</h1>
+        <button className="btn btn-primary" onClick={() => { setEditId(null); setModalOpen(true) }}>
+          ➕ {t('new_payment_title')}
+        </button>
       </div>
 
-      <div className="grid-2">
-        <div className="card">
-          <div className="card-header"><div className="card-title">💸 {t('new_payment_title')}</div></div>
-
-          <div className="form-group">
-            <label className="form-label">{t('lbl_voucher_no')}</label>
-            <input className="form-control" value={form.number} onChange={f('number')} style={{ direction:'ltr' }} />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">{t('lbl_amount')}</label>
-            <input type="number" className="form-control" value={form.amount} onChange={f('amount')} />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">{t('lbl_date')}</label>
-            <input type="date" className="form-control" value={form.date} onChange={f('date')} />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">{t('lbl_debit_acc')}</label>
-            <TypeaheadInput
-              value={form.debitAcc}
-              onChange={v => setForm(p => ({ ...p, debitAcc: v }))}
-              onSelect={a => setForm(p => ({ ...p, debitAcc: a.code ? `${a.code} - ${a.name}` : a.name }))}
-              items={partyItems}
-              placeholder={t('ph_code_or_name')}
-              renderItem={a => <><span>{a.code ? `${a.code} - ` : ''}{a.name}</span><span className="item-code">{typeLabel[a._type]}</span></>}
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">{t('lbl_credit_acc')}</label>
-            <TypeaheadInput
-              value={form.creditAcc}
-              onChange={v => setForm(p => ({ ...p, creditAcc: v }))}
-              onSelect={a => setForm(p => ({ ...p, creditAcc: a.code ? `${a.code} - ${a.name}` : a.name }))}
-              items={partyItems}
-              placeholder={t('ph_code_or_name')}
-              renderItem={a => <><span>{a.code ? `${a.code} - ` : ''}{a.name}</span><span className="item-code">{typeLabel[a._type]}</span></>}
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">{t('lbl_desc')}</label>
-            <textarea className="form-control" rows="2" value={form.desc} onChange={f('desc')} />
-          </div>
-
-          <button className="btn btn-success" style={{ width:'100%' }} onClick={handleSave}>
-            💾 {t('save_voucher_btn')}
-          </button>
-        </div>
-
-        <div className="card">
-          <div className="card-header"><div className="card-title">📋 {t('recent_vouchers')}</div></div>
-          <div className="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>{t('th_number')}</th>
-                  <th>{t('th_amount')}</th>
-                  <th>{t('th_debit')}</th>
-                  <th>{t('th_credit')}</th>
-                  <th>{t('th_date')}</th>
+      <div className="card">
+        <div className="card-header"><div className="card-title">📋 {t('recent_vouchers')}</div></div>
+        <div className="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>{t('th_number')}</th>
+                <th>{t('th_date')}</th>
+                <th>{t('th_debit')}</th>
+                <th>{t('th_credit')}</th>
+                <th>{t('th_amount')}</th>
+                <th style={{ width:'110px' }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan="6" style={{ textAlign:'center', padding:'20px' }}><div className="loading-spinner"></div></td></tr>
+              ) : vouchers.length === 0 ? (
+                <tr><td colSpan="6" style={{ textAlign:'center', padding:'20px', color:'var(--text-muted)' }}>{t('no_vouchers')}</td></tr>
+              ) : vouchers.map((v, i) => (
+                <tr key={i}>
+                  <td style={{ fontSize:'12px', direction:'ltr', fontWeight:600, color:'var(--primary)' }}>{v.number}</td>
+                  <td style={{ fontSize:'12px' }}>{v.date}</td>
+                  <td style={{ fontSize:'12px' }}>{v.method?.split(' | ')[0] || '—'}</td>
+                  <td style={{ fontSize:'12px' }}>{v.method?.split(' | ')[1] || '—'}</td>
+                  <td style={{ direction:'ltr', fontWeight:700 }}>${fmt(v.amount)}</td>
+                  <td>
+                    <div style={{ display:'flex', gap:'4px' }}>
+                      <button className="btn btn-sm btn-outline" title="Print" onClick={() => printVoucherWindow(v, company, 'payment')}>🖨</button>
+                      <button className="btn btn-sm btn-outline" title="Edit"  onClick={() => openEdit(v)}>✏️</button>
+                      <button className="btn btn-sm btn-danger"  title="Delete" onClick={() => deleteVoucher(v.id, 'payment')}>🗑</button>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr><td colSpan="5" style={{ textAlign:'center', padding:'20px' }}><div className="loading-spinner"></div></td></tr>
-                ) : vouchers.length === 0 ? (
-                  <tr><td colSpan="5" style={{ textAlign:'center', padding:'20px', color:'var(--text-muted)' }}>{t('no_vouchers')}</td></tr>
-                ) : vouchers.slice(0, 15).map((v, i) => (
-                  <tr key={i}>
-                    <td style={{ fontSize:'11px', direction:'ltr' }}>{v.number}</td>
-                    <td style={{ direction:'ltr' }}>${fmt(v.amount)}</td>
-                    <td style={{ fontSize:'11px' }}>{v.method?.split(' | ')[0] || '—'}</td>
-                    <td style={{ fontSize:'11px' }}>{v.method?.split(' | ')[1] || '—'}</td>
-                    <td>{v.date}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
+
+      <Modal
+        isOpen={modalOpen}
+        onClose={closeModal}
+        title={editId ? '✏️ Edit Payment Voucher' : `💸 ${t('new_payment_title')}`}
+        footer={
+          <>
+            <button className="btn btn-success" onClick={handleSave}>💾 {t('save_voucher_btn')}</button>
+            <button className="btn btn-outline" onClick={closeModal}>{t('btn_cancel')}</button>
+          </>
+        }
+      >
+        <div className="form-group">
+          <label className="form-label">{t('lbl_voucher_no')}</label>
+          <input className="form-control" value={form.number} onChange={f('number')} style={{ direction:'ltr' }} />
+        </div>
+        <div className="form-group">
+          <label className="form-label">{t('lbl_amount')}</label>
+          <input type="number" className="form-control" value={form.amount} onChange={f('amount')} />
+        </div>
+        <div className="form-group">
+          <label className="form-label">{t('lbl_date')}</label>
+          <input type="date" className="form-control" value={form.date} onChange={f('date')} />
+        </div>
+        <div className="form-group">
+          <label className="form-label">{t('lbl_debit_acc')}</label>
+          <TypeaheadInput
+            value={form.debitAcc}
+            onChange={v => setForm(p => ({ ...p, debitAcc: v }))}
+            onSelect={a => setForm(p => ({ ...p, debitAcc: a.code ? `${a.code} - ${a.name}` : a.name }))}
+            items={partyItems} placeholder={t('ph_code_or_name')}
+            renderItem={a => <><span>{a.code ? `${a.code} - ` : ''}{a.name}</span><span className="item-code">{typeLabel[a._type]}</span></>}
+          />
+        </div>
+        <div className="form-group">
+          <label className="form-label">{t('lbl_credit_acc')}</label>
+          <TypeaheadInput
+            value={form.creditAcc}
+            onChange={v => setForm(p => ({ ...p, creditAcc: v }))}
+            onSelect={a => setForm(p => ({ ...p, creditAcc: a.code ? `${a.code} - ${a.name}` : a.name }))}
+            items={partyItems} placeholder={t('ph_code_or_name')}
+            renderItem={a => <><span>{a.code ? `${a.code} - ` : ''}{a.name}</span><span className="item-code">{typeLabel[a._type]}</span></>}
+          />
+        </div>
+        <div className="form-group">
+          <label className="form-label">{t('lbl_desc')}</label>
+          <textarea className="form-control" rows="2" value={form.desc} onChange={f('desc')} />
+        </div>
+      </Modal>
     </div>
   )
 }

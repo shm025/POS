@@ -35,7 +35,10 @@ export default function CompanySettingsPage() {
         phone: company.phone || '',
         email: company.email || '',
         website: company.website || '',
+        currency: company.currency || 'USD',
         tax_rate: company.tax_rate ?? 11,
+        period_start: company.period_start || '2026-01-01',
+        period_end: company.period_end || '2026-12-31',
         reg_number: company.reg_number || '',
         exchange_rate: company.exchange_rate || 89500,
         timezone: company.timezone || 'Asia/Beirut',
@@ -53,16 +56,18 @@ export default function CompanySettingsPage() {
       phone: form.phone,
       email: form.email,
       website: form.website,
+      currency: form.currency,
       tax_rate: parseFloat(form.tax_rate) || 0,
+      period_start: form.period_start || null,
+      period_end: form.period_end || null,
       reg_number: form.reg_number,
       exchange_rate: parseFloat(form.exchange_rate) || 89500,
       exchange_rate_updated_at: new Date().toISOString(),
       timezone: form.timezone,
-      plan: form.plan,
     }).eq('id', company.id)
 
     if (error) {
-      notify(t('save_error'), 'error')
+      notify(t('save_error') + ': ' + error.message, 'error')
     } else {
       notify(t('company_saved'))
       refreshCompany()

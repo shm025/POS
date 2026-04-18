@@ -35,7 +35,11 @@ export function useCustomers(companyId) {
   }, [companyId])
 
   const saveCustomer = useCallback(async (formData, editId) => {
-    const data = { company_id: companyId, ...formData }
+    const data = {
+      company_id: companyId,
+      ...formData,
+      dob: formData.dob || null,
+    }
     if (editId) {
       const { error } = await supabase.from('customers').update(data).eq('id', editId)
       if (error) { notify(t('save_error') + ': ' + error.message, 'error'); return false }
