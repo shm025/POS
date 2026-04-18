@@ -8,7 +8,7 @@ import { fmt, fmtInt } from '../../utils/format'
 
 const TIER_BADGE = { bronze:'badge-secondary', silver:'badge-info', gold:'badge-warning', platinum:'badge-success' }
 
-const EMPTY_CUSTOMER = { code:'', name:'', phone:'', email:'', dob:'', notes:'', whatsapp_opted_in:false }
+const EMPTY_CUSTOMER = { code:'', name:'', phone:'', email:'', dob:'', notes:'' }
 const EMPTY_SUPPLIER  = { code:'', name:'', phone:'', email:'', notes:'' }
 
 function nextCode(list, prefix) {
@@ -39,7 +39,7 @@ export default function CustomersPage() {
 
   function openNewCustomer() { setForm({ ...EMPTY_CUSTOMER, code: nextCode(customers, 'C-') }); setEditId(null); setModal(true) }
   function openEditCustomer(c) {
-    setForm({ code:c.code||'', name:c.name||'', phone:c.phone||'', email:c.email||'', dob:c.dob||'', notes:c.notes||'', whatsapp_opted_in:c.whatsapp_opted_in||false })
+    setForm({ code:c.code||'', name:c.name||'', phone:c.phone||'', email:c.email||'', dob:c.dob||'', notes:c.notes||'' })
     setEditId(c.id); setModal(true)
   }
 
@@ -72,6 +72,7 @@ export default function CustomersPage() {
 
   const totalPoints = customers.reduce((s, c) => s + (c.loyalty_points || 0), 0)
   const totalSpend  = customers.reduce((s, c) => s + parseFloat(c.lifetime_spend || 0), 0)
+  const whatsappCount = 0 // column removed from DB
 
   const isCustomers = tab === 'customers'
 
@@ -129,7 +130,7 @@ export default function CustomersPage() {
           </div>
           <div className="stat-card">
             <div className="stat-label">{t('cust_whatsapp_subs')}</div>
-            <div className="stat-value">{fmtInt(customers.filter(c => c.whatsapp_opted_in).length)}</div>
+            <div className="stat-value">{fmtInt(whatsappCount)}</div>
           </div>
         </div>
       )}
@@ -161,14 +162,14 @@ export default function CustomersPage() {
                   <th>{t('th_code')}</th><th>{t('lbl_name')}</th><th>{t('lbl_phone')}</th><th>{t('lbl_email')}</th>
                   <th>{t('cust_th_points')}</th><th>{t('cust_th_tier')}</th>
                   <th>{t('cust_th_visits')}</th><th>{t('cust_th_spend')}</th>
-                  <th>{t('cust_th_whatsapp')}</th><th className="no-print">{t('th_action')}</th>
+                  <th className="no-print">{t('th_action')}</th>
                 </tr>
               </thead>
               <tbody>
                 {custLoading ? (
                   <tr><td colSpan="10" style={{ textAlign:'center', padding:'20px' }}><div className="loading-spinner"></div></td></tr>
                 ) : filteredCustomers.length === 0 ? (
-                  <tr><td colSpan="10"><div className="empty-state"><div className="icon">👤</div><p>{t('no_customers')}</p></div></td></tr>
+                  <tr><td colSpan="9"><div className="empty-state"><div className="icon">👤</div><p>{t('no_customers')}</p></div></td></tr>
                 ) : filteredCustomers.map(c => (
                   <tr key={c.id}>
                     <td style={{ fontWeight:700, color:'var(--primary)', direction:'ltr' }}>{c.code || '—'}</td>
@@ -179,7 +180,6 @@ export default function CustomersPage() {
                     <td><span className={`badge ${TIER_BADGE[c.loyalty_tier] || 'badge-secondary'}`}>{TIER_LABEL[c.loyalty_tier] || c.loyalty_tier}</span></td>
                     <td>{fmtInt(c.total_visits || 0)}</td>
                     <td style={{ direction:'ltr' }}>${fmt(c.lifetime_spend || 0)}</td>
-                    <td>{c.whatsapp_opted_in ? '✅' : '—'}</td>
                     <td className="no-print">
                       <button className="btn btn-sm btn-outline" onClick={() => openEditCustomer(c)}>✏️</button>
                       <button className="btn btn-sm btn-danger" style={{ marginRight:'4px' }} onClick={() => deleteCustomer(c.id)}>🗑</button>
@@ -261,10 +261,6 @@ export default function CustomersPage() {
           <div className="form-group">
             <label className="form-label">{t('lbl_notes')}</label>
             <textarea className="form-control" rows="2" value={form.notes} onChange={e => set('notes', e.target.value)} />
-          </div>
-          <div className="form-group" style={{ display:'flex', alignItems:'center', gap:'8px' }}>
-            <input type="checkbox" id="whatsapp_opted_in" checked={form.whatsapp_opted_in} onChange={e => set('whatsapp_opted_in', e.target.checked)} />
-            <label htmlFor="whatsapp_opted_in" className="form-label" style={{ margin:0 }}>{t('lbl_whatsapp_consent')}</label>
           </div>
         </Modal>
       )}

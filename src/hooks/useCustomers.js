@@ -54,7 +54,15 @@ export function useCustomers(companyId) {
 
   const deleteCustomer = useCallback(async (id) => {
     if (!confirm(t('confirm_delete'))) return
-    await supabase.from('customers').delete().eq('id', id)
+    // Unlink customer from historical records — records are kept, only the FK reference is cleared
+    await supabase.from('invoices').update({ customer_id: null }).eq('customer_id', id)
+    await supabase.from('reservations').update({ customer_id: null }).eq('customer_id', id)
+    await supabase.from('loyalty_transactions').delete().eq('customer_id', id)
+    const { error } = await supabase.from('customers').delete().eq('id', id)
+    if (error) {
+      notify(t('save_error') + ': ' + error.message, 'error')
+      return
+    }
     notify(t('notify_deleted'))
     await loadCustomers()
   }, [loadCustomers, t])

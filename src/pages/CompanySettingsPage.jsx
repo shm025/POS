@@ -55,12 +55,9 @@ export default function CompanySettingsPage() {
       address: form.address,
       phone: form.phone,
       email: form.email,
-      website: form.website,
       currency: form.currency,
-      tax_rate: parseFloat(form.tax_rate) || 0,
       period_start: form.period_start || null,
       period_end: form.period_end || null,
-      reg_number: form.reg_number,
       exchange_rate: parseFloat(form.exchange_rate) || 89500,
       exchange_rate_updated_at: new Date().toISOString(),
       timezone: form.timezone,
@@ -106,10 +103,6 @@ export default function CompanySettingsPage() {
             <label className="form-label">{t('lbl_email')}</label>
             <input className="form-control" value={form.email} onChange={e => set('email', e.target.value)} />
           </div>
-          <div className="form-group">
-            <label className="form-label">{t('lbl_website')}</label>
-            <input className="form-control" value={form.website} onChange={e => set('website', e.target.value)} />
-          </div>
         </div>
         <div className="card">
           <div className="card-header"><div className="card-title">⚙️ {t('system_settings_section')}</div></div>
@@ -143,20 +136,12 @@ export default function CompanySettingsPage() {
             </select>
           </div>
           <div className="form-group">
-            <label className="form-label">{t('lbl_tax_rate')}</label>
-            <input type="number" className="form-control" value={form.tax_rate} onChange={e => set('tax_rate', e.target.value)} />
-          </div>
-          <div className="form-group">
             <label className="form-label">{t('lbl_period_start')}</label>
             <input type="date" className="form-control" value={form.period_start} onChange={e => set('period_start', e.target.value)} />
           </div>
           <div className="form-group">
             <label className="form-label">{t('lbl_period_end')}</label>
             <input type="date" className="form-control" value={form.period_end} onChange={e => set('period_end', e.target.value)} />
-          </div>
-          <div className="form-group">
-            <label className="form-label">{t('lbl_reg_number')}</label>
-            <input className="form-control" value={form.reg_number} onChange={e => set('reg_number', e.target.value)} />
           </div>
         </div>
       </div>
