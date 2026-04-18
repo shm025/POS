@@ -18,8 +18,6 @@ export const SIDEBAR_MENUS = {
     { icon:'👥', label:'الموظفون',         page:'employees' },
     { icon:'💰', label:'العمولات',         page:'commissions' },
     { icon:'📅', label:'الحجوزات',         page:'reservations' },
-    { icon:'🛒', label:'فاتورة شراء',      page:'purchases' },
-    { icon:'📋', label:'سجل المشتريات',    page:'purchases-list' },
     { icon:'🧴', label:'المستلزمات',       page:'supplies' },
     { icon:'💡', label:'الفواتير الثابتة', page:'bills' },
     { icon:'💵', label:'سند قبض',          page:'receipt-voucher' },

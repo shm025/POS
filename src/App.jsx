@@ -6,7 +6,6 @@ import Dashboard from './pages/Dashboard'
 
 // Common
 import PurchasesPage from './pages/PurchasesPage'
-import PurchasesListPage from './pages/PurchasesListPage'
 import ReceiptVoucherPage from './pages/ReceiptVoucherPage'
 import PaymentVoucherPage from './pages/PaymentVoucherPage'
 import CompanySettingsPage from './pages/CompanySettingsPage'
@@ -27,6 +26,7 @@ import PurchasesReturnPage from './pages/retail/PurchasesReturnPage'
 import OrdersPage from './pages/retail/OrdersPage'
 import CustomersPage from './pages/retail/CustomersPage'
 import POSPage from './pages/retail/POSPage'
+import PurchasesListPage from './pages/retail/PurchasesListPage'
 
 // Barber
 import BarberDashboard from './pages/barber/BarberDashboard'
@@ -59,7 +59,6 @@ export default function App() {
         {/* Common */}
         <Route path="/purchases" element={<PurchasesPage />} />
         <Route path="/purchases/edit/:docId" element={<PurchasesPage />} />
-        <Route path="/purchases-list" element={<PurchasesListPage />} />
         <Route path="/receipt-voucher" element={<ReceiptVoucherPage />} />
         <Route path="/payment-voucher" element={<PaymentVoucherPage />} />
         <Route path="/company-settings" element={<CompanySettingsPage />} />
@@ -79,6 +78,7 @@ export default function App() {
         <Route path="/trial-balance" element={<TrialBalancePage />} />
         <Route path="/journal-entries" element={<JournalEntriesPage />} />
         <Route path="/customers" element={<CustomersPage />} />
+        <Route path="/purchases-list" element={<PurchasesListPage />} />
         <Route path="/pos" element={<POSPage />} />
 
         {/* Barber */}
