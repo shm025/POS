@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useLang } from '../../contexts/LangContext'
 import { supabase } from '../../lib/supabase'
@@ -24,6 +25,7 @@ const EMPTY_ITEM = { item_name: '', item_code: '', quantity: 1, unit_price: 0, t
 export default function OrdersRegisterPage() {
   const { company } = useAuth()
   const { t } = useLang()
+  const navigate = useNavigate()
 
   const [orders, setOrders]       = useState([])
   const [items, setItems]         = useState([])        // company items for autocomplete
@@ -232,7 +234,7 @@ export default function OrdersRegisterPage() {
       {/* Header */}
       <div className="flex-between mb-4">
         <h1 style={{ fontSize:'20px', fontWeight:900, color:'var(--primary)' }}>📑 {t('orders_register_title') || 'سجل الطلبيات'}</h1>
-        <button className="btn btn-primary" onClick={openNew}>➕ {t('new_order_btn') || 'طلبية جديدة'}</button>
+        <button className="btn btn-primary" onClick={() => navigate('/orders')}>➕ New Order</button>
       </div>
 
       {/* Filters */}
@@ -304,7 +306,7 @@ export default function OrdersRegisterPage() {
 
       {/* Modal */}
       {modal && (
-        <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) setModal(false) }}>
+        <div className="modal-overlay open" onClick={e => { if (e.target === e.currentTarget) setModal(false) }}>
           <div className="modal" style={{ maxWidth:'780px', width:'95%', maxHeight:'90vh', overflowY:'auto' }}>
             <div className="modal-header">
               <h3 className="modal-title">{editId ? (t('edit_order') || 'تعديل الطلبية') : (t('new_order_btn') || 'طلبية جديدة')}</h3>
