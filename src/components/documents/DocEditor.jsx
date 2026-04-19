@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useDocuments } from '../../hooks/useDocuments'
 import { useLang } from '../../contexts/LangContext'
 import { supabase } from '../../lib/supabase'
+import { fmt } from '../../utils/format'
 import { DOC_TYPES } from '../../lib/constants'
 import TypeaheadInput from '../common/TypeaheadInput'
 import DocItemsTable from './DocItemsTable'
-import DocSummaryCard from './DocSummaryCard'
 import DocPrintHeader from './DocPrintHeader'
+import DocPrintFooter from './DocPrintFooter'
 
 const DOC_TYPE_KEYS = {
   invoices:          { labelKey: 'doc_type_invoices',         partyKey: 'party_customer' },
@@ -27,6 +29,7 @@ export default function DocEditor({ docType, docId }) {
     loadDoc, loadPartyCache, addRow, removeRow, updateRow, selectItem, updateMeta, saveDoc, duplicateDoc,
   } = useDocuments(company?.id)
 
+  const navigate = useNavigate()
   const cfg = DOC_TYPES[docType] || DOC_TYPES.invoices
   const typeKeys = DOC_TYPE_KEYS[docType] || DOC_TYPE_KEYS.invoices
 
@@ -50,22 +53,18 @@ export default function DocEditor({ docType, docId }) {
 
   return (
     <div className="page-view">
-      <DocPrintHeader
-        docType={docType}
-        docMeta={docMeta} subtotal={subtotal} afterDisc={afterDisc}
-        total={total} totalQty={totalQty} discount={discount} tax={tax}
-      />
+      <DocPrintHeader docType={docType} docMeta={docMeta} />
 
       <div className="flex-between mb-4 no-print">
         <h1 style={{ fontSize:'20px', fontWeight:900, color:'var(--primary)' }}>{cfg.icon} {t(typeKeys.labelKey)}</h1>
         <div className="flex gap-2">
           <button className="btn btn-outline" onClick={duplicateDoc}>📋 {t('duplicate_btn')}</button>
           <button className="btn btn-outline" onClick={() => window.print()}>🖨 {t('print_btn')}</button>
-          <button className="btn btn-success" onClick={saveDoc}>💾 {t('save_btn')}</button>
+          <button className="btn btn-primary" onClick={() => navigate('/' + docType)}>➕ {t('new_invoice_btn')}</button>
         </div>
       </div>
 
-      <div className="grid-2">
+      <div className="grid-1">
         {/* Doc Info Card */}
         <div className="card">
           <div className="card-header"><div className="card-title">📋 {t('doc_info_title')}</div></div>
@@ -126,12 +125,6 @@ export default function DocEditor({ docType, docId }) {
           </div>
         </div>
 
-        {/* Summary Card */}
-        <DocSummaryCard
-          subtotal={subtotal} discount={discount} tax={tax}
-          afterDisc={afterDisc} total={total} notes={docMeta.notes}
-          onMetaChange={updateMeta}
-        />
       </div>
 
       <DocItemsTable
@@ -141,6 +134,31 @@ export default function DocEditor({ docType, docId }) {
         onRemoveRow={removeRow}
         onUpdateRow={updateRow}
         onSelectItem={selectItem}
+      />
+
+      {/* On-screen totals — hidden on print */}
+      <div className="card no-print" style={{ marginTop:'8px' }}>
+        <div style={{ display:'flex', gap:'24px', alignItems:'center', flexWrap:'wrap', padding:'4px 0' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
+            <label style={{ fontSize:'13px', color:'var(--text-muted)', whiteSpace:'nowrap' }}>{t('doc_discount_pct')}</label>
+            <input type="number" className="form-control" style={{ width:'80px', textAlign:'center' }}
+              value={docMeta.discount} onChange={e => updateMeta('discount', e.target.value)} />
+          </div>
+          <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
+            <label style={{ fontSize:'13px', color:'var(--text-muted)', whiteSpace:'nowrap' }}>{t('doc_vat_pct')}</label>
+            <input type="number" className="form-control" style={{ width:'80px', textAlign:'center' }}
+              value={docMeta.tax} onChange={e => updateMeta('tax', e.target.value)} />
+          </div>
+          <div style={{ marginRight:'auto', fontSize:'22px', fontWeight:900, color:'var(--primary)', direction:'ltr' }}>
+            ${fmt(total)}
+          </div>
+        </div>
+      </div>
+
+      <DocPrintFooter
+        docType={docType} docId={docId}
+        docMeta={docMeta} subtotal={subtotal} afterDisc={afterDisc}
+        total={total} totalQty={totalQty} discount={discount} tax={tax}
       />
     </div>
   )
