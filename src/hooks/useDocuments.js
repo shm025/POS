@@ -74,10 +74,12 @@ export function useDocuments(companyId) {
     })
 
     if (docData?.invoice_items?.length) {
+      const itemMap = {}
+      mappedItems.forEach(i => { itemMap[i.id] = i })
       setDocItems(docData.invoice_items.map(it => ({
         _rowId: 'r' + (++rowCounter.current),
         itemId: it.item_id,
-        itemCode: '',
+        itemCode: (it.item_id && itemMap[it.item_id]?.code) || '',
         itemName: it.item_name || '',
         qty: it.quantity,
         price: it.unit_price,
