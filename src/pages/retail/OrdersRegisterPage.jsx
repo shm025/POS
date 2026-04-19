@@ -144,11 +144,13 @@ export default function OrdersRegisterPage() {
     let orderId = editId
 
     if (editId) {
-      await supabase.from('orders').update(payload).eq('id', editId)
+      const { error } = await supabase.from('orders').update(payload).eq('id', editId)
+      if (error) { notify(error.message, 'error'); setSaving(false); return }
       await supabase.from('order_items').delete().eq('order_id', editId)
     } else {
       payload.order_number = await genNumber()
-      const { data } = await supabase.from('orders').insert(payload).select().single()
+      const { data, error } = await supabase.from('orders').insert(payload).select().single()
+      if (error || !data) { notify(error?.message || 'Save failed', 'error'); setSaving(false); return }
       orderId = data.id
     }
 
@@ -184,7 +186,7 @@ export default function OrdersRegisterPage() {
       .eq('company_id', company.id).eq('doc_type', 'invoices')
     const number = `INV-${new Date().getFullYear()}-${String((count || 0) + 1).padStart(3, '0')}`
 
-    const { data: inv } = await supabase.from('invoices').insert({
+    const { data: inv, error: invErr } = await supabase.from('invoices').insert({
       company_id: company.id,
       doc_type: 'invoices',
       number,
@@ -196,6 +198,8 @@ export default function OrdersRegisterPage() {
       tax: 0,
       total: order.total,
     }).select().single()
+
+    if (invErr || !inv) { notify(invErr?.message || 'Failed to create invoice', 'error'); return }
 
     const lines = (order.order_items || []).filter(i => i.item_name).map(i => ({
       invoice_id: inv.id,
