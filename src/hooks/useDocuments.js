@@ -224,7 +224,7 @@ export function useDocuments(companyId) {
     }
 
     notify(t('notify_doc_saved'))
-    setTimeout(() => loadDoc(docType, invoiceUuid), 300)
+    return invoiceUuid
   }
 
   async function duplicateDoc() {
