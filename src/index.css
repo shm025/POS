@@ -355,9 +355,14 @@ html[dir="ltr"] .notification { right: auto; left: 260px; }
   }
   #doc-items-table tbody td:nth-child(3) { text-align: right; }
   .print-signature { display: block !important; margin-top: 16px; font-size: 12px; }
-  .btn, button, select, input[type="number"], input[type="date"], input[type="text"], textarea { display: none !important; }
-  .print-value { display: inline !important; font-size: 9px; }
-  .typeahead-wrap { display: inline !important; }
+  .btn, button, select, input[type="number"], input[type="date"], textarea { display: none !important; }
+  input[type="text"] { display: none !important; }
+  #doc-items-table input[type="text"], #doc-items-table .typeahead-input {
+    display: inline !important; border: none !important; background: transparent !important;
+    padding: 0 !important; width: 100% !important; font-size: 9px !important; box-shadow: none !important;
+  }
+  #doc-items-table input[type="number"] { display: inline !important; border: none !important; background: transparent !important; padding: 0 !important; width: 100% !important; font-size: 9px !important; box-shadow: none !important; text-align: center !important; }
+  .typeahead-wrap { display: block !important; }
   .typeahead-dropdown { display: none !important; }
   .print-totals-table { display: table !important; }
   .print-customer-info { display: block !important; }

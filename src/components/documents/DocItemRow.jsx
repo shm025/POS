@@ -15,7 +15,6 @@ export default function DocItemRow({ row, rowNumber, allItems, onUpdate, onSelec
           items={allItems}
           placeholder={t('ph_item_code')}
         />
-        <span className="print-value">{row.itemCode || ''}</span>
       </td>
       <td style={{ width:'30%' }}>
         <TypeaheadInput
@@ -32,22 +31,18 @@ export default function DocItemRow({ row, rowNumber, allItems, onUpdate, onSelec
             </>
           )}
         />
-        <span className="print-value">{row.itemName || ''}</span>
       </td>
       <td style={{ width:'10%' }}>
         <input type="number" className="form-control" value={row.qty} min="1"
           onChange={e => onUpdate('qty', e.target.value)} />
-        <span className="print-value">{row.qty}</span>
       </td>
       <td style={{ width:'12%' }}>
         <input type="number" className="form-control" value={row.price} step="0.01"
           onChange={e => onUpdate('price', e.target.value)} />
-        <span className="print-value">{fmt(row.price)}</span>
       </td>
       <td style={{ width:'6%', textAlign:'center' }}>
         <input type="number" className="form-control" value={row.discount} min="0" max="100"
           onChange={e => onUpdate('discount', e.target.value)} style={{ width:'50px' }} />
-        <span className="print-value">{row.discount || 0}</span>
       </td>
       <td style={{ width:'6%', textAlign:'center', color:'var(--text-muted)', fontSize:'11px' }}>0</td>
       <td style={{ width:'12%', fontWeight:700, color:'var(--primary)', direction:'ltr', textAlign:'right' }}>
