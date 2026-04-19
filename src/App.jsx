@@ -24,6 +24,7 @@ import InvoicesListPage from './pages/retail/InvoicesListPage'
 import SalesReturnPage from './pages/retail/SalesReturnPage'
 import PurchasesReturnPage from './pages/retail/PurchasesReturnPage'
 import OrdersPage from './pages/retail/OrdersPage'
+import OrdersRegisterPage from './pages/retail/OrdersRegisterPage'
 import CustomersPage from './pages/retail/CustomersPage'
 import POSPage from './pages/retail/POSPage'
 import PurchasesListPage from './pages/retail/PurchasesListPage'
@@ -70,6 +71,7 @@ export default function App() {
         <Route path="/sales-return" element={<SalesReturnPage />} />
         <Route path="/purchases-return" element={<PurchasesReturnPage />} />
         <Route path="/orders" element={<OrdersPage />} />
+        <Route path="/orders-register" element={<OrdersRegisterPage />} />
         <Route path="/items" element={<ItemsPage />} />
         <Route path="/stock-report" element={<StockReportPage />} />
         <Route path="/warehouse" element={<WarehousePage />} />

@@ -31,6 +31,7 @@ export const SIDEBAR_MENUS = {
     { icon:'📋', label:'سجل الفواتير',     page:'invoices-list' },
     { icon:'↩️', label:'مرتجع مبيعات',    page:'sales-return' },
     { icon:'📑', label:'طلبيات',           page:'orders' },
+    { icon:'📋', label:'سجل الطلبيات',    page:'orders-register' },
     { icon:'🛒', label:'فاتورة شراء',      page:'purchases' },
     { icon:'📋', label:'سجل المشتريات',    page:'purchases-list' },
     { icon:'↩️', label:'مرتجع مشتريات',   page:'purchases-return' },
