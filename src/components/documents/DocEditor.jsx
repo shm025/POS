@@ -60,11 +60,7 @@ export default function DocEditor({ docType, docId }) {
         <div className="flex gap-2">
           <button className="btn btn-outline" onClick={duplicateDoc}>📋 {t('duplicate_btn')}</button>
           <button className="btn btn-outline" onClick={() => window.print()}>🖨 {t('print_btn')}</button>
-          <button className="btn btn-primary" onClick={async () => {
-            await saveDoc()
-            navigate('/' + docType, { replace: true })
-            loadDoc(docType, null)
-          }}>➕ {t('new_invoice_btn')}</button>
+          <button className="btn btn-primary" onClick={() => navigate('/' + docType)}>➕ {t('new_invoice_btn')}</button>
         </div>
       </div>
 
