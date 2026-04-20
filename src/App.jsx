@@ -71,6 +71,7 @@ export default function App() {
         <Route path="/sales-return" element={<SalesReturnPage />} />
         <Route path="/purchases-return" element={<PurchasesReturnPage />} />
         <Route path="/orders" element={<OrdersPage />} />
+        <Route path="/orders/edit/:docId" element={<OrdersPage />} />
         <Route path="/orders-register" element={<OrdersRegisterPage />} />
         <Route path="/items" element={<ItemsPage />} />
         <Route path="/stock-report" element={<StockReportPage />} />
