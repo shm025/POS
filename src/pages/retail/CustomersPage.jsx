@@ -8,8 +8,8 @@ import { fmt, fmtInt } from '../../utils/format'
 
 const TIER_BADGE = { bronze:'badge-secondary', silver:'badge-info', gold:'badge-warning', platinum:'badge-success' }
 
-const EMPTY_CUSTOMER = { code:'', name:'', phone:'', email:'', dob:'', notes:'' }
-const EMPTY_SUPPLIER  = { code:'', name:'', phone:'', email:'', notes:'' }
+const EMPTY_CUSTOMER = { code:'', name:'', phone:'', email:'', dob:'', notes:'', opening_balance: 0 }
+const EMPTY_SUPPLIER  = { code:'', name:'', phone:'', email:'', notes:'', opening_balance: 0 }
 
 function nextCode(list, prefix) {
   const nums = list.map(x => parseInt((x.code || '').replace(prefix, '')) || 0)
@@ -39,13 +39,13 @@ export default function CustomersPage() {
 
   function openNewCustomer() { setForm({ ...EMPTY_CUSTOMER, code: nextCode(customers, 'C-') }); setEditId(null); setModal(true) }
   function openEditCustomer(c) {
-    setForm({ code:c.code||'', name:c.name||'', phone:c.phone||'', email:c.email||'', dob:c.dob||'', notes:c.notes||'' })
+    setForm({ code:c.code||'', name:c.name||'', phone:c.phone||'', email:c.email||'', dob:c.dob||'', notes:c.notes||'', opening_balance: c.opening_balance || 0 })
     setEditId(c.id); setModal(true)
   }
 
   function openNewSupplier() { setForm({ ...EMPTY_SUPPLIER, code: nextCode(suppliers, 'S-') }); setEditId(null); setModal(true) }
   function openEditSupplier(s) {
-    setForm({ code:s.code||'', name:s.name||'', phone:s.phone||'', email:s.email||'', notes:s.notes||'' })
+    setForm({ code:s.code||'', name:s.name||'', phone:s.phone||'', email:s.email||'', notes:s.notes||'', opening_balance: s.opening_balance || 0 })
     setEditId(s.id); setModal(true)
   }
 
@@ -160,6 +160,7 @@ export default function CustomersPage() {
               <thead>
                 <tr>
                   <th>{t('th_code')}</th><th>{t('lbl_name')}</th><th>{t('lbl_phone')}</th><th>{t('lbl_email')}</th>
+                  <th>Opening Balance</th>
                   <th>{t('cust_th_points')}</th><th>{t('cust_th_tier')}</th>
                   <th>{t('cust_th_visits')}</th><th>{t('cust_th_spend')}</th>
                   <th className="no-print">{t('th_action')}</th>
@@ -176,6 +177,7 @@ export default function CustomersPage() {
                     <td style={{ fontWeight:600 }}>{c.name}</td>
                     <td style={{ direction:'ltr' }}>{c.phone || '-'}</td>
                     <td>{c.email || '-'}</td>
+                    <td style={{ direction:'ltr' }}>${fmt(c.opening_balance || 0)}</td>
                     <td style={{ fontWeight:700, color:'var(--primary)' }}>{fmtInt(c.loyalty_points || 0)}</td>
                     <td><span className={`badge ${TIER_BADGE[c.loyalty_tier] || 'badge-secondary'}`}>{TIER_LABEL[c.loyalty_tier] || c.loyalty_tier}</span></td>
                     <td>{fmtInt(c.total_visits || 0)}</td>
@@ -197,7 +199,7 @@ export default function CustomersPage() {
               <thead>
                 <tr>
                   <th>{t('th_code')}</th><th>{t('th_name')}</th><th>{t('th_phone')}</th><th>{t('lbl_email')}</th>
-                  <th>{t('lbl_notes')}</th><th className="no-print">{t('th_action')}</th>
+                  <th>Opening Balance</th><th>{t('lbl_notes')}</th><th className="no-print">{t('th_action')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -211,6 +213,7 @@ export default function CustomersPage() {
                     <td style={{ fontWeight:600 }}>{s.name}</td>
                     <td style={{ direction:'ltr' }}>{s.phone || '-'}</td>
                     <td>{s.email || '-'}</td>
+                    <td style={{ direction:'ltr' }}>${fmt(s.opening_balance || 0)}</td>
                     <td style={{ color:'var(--text-muted)', fontSize:'12px' }}>{s.notes || '-'}</td>
                     <td className="no-print">
                       <button className="btn btn-sm btn-outline" onClick={() => openEditSupplier(s)}>✏️</button>
@@ -257,6 +260,10 @@ export default function CustomersPage() {
               <label className="form-label">{t('lbl_dob')}</label>
               <input type="date" className="form-control" value={form.dob} onChange={e => set('dob', e.target.value)} />
             </div>
+            <div className="form-group">
+              <label className="form-label">Opening Balance ($)</label>
+              <input type="number" step="0.01" className="form-control" value={form.opening_balance} onChange={e => set('opening_balance', parseFloat(e.target.value) || 0)} />
+            </div>
           </div>
           <div className="form-group">
             <label className="form-label">{t('lbl_notes')}</label>
@@ -293,6 +300,10 @@ export default function CustomersPage() {
             <div className="form-group">
               <label className="form-label">{t('lbl_email')}</label>
               <input className="form-control" value={form.email || ''} onChange={e => set('email', e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Opening Balance ($)</label>
+              <input type="number" step="0.01" className="form-control" value={form.opening_balance || 0} onChange={e => set('opening_balance', parseFloat(e.target.value) || 0)} />
             </div>
           </div>
           <div className="form-group">
