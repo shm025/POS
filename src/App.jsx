@@ -35,8 +35,10 @@ import ServicesPage from './pages/barber/ServicesPage'
 import EmployeesPage from './pages/barber/EmployeesPage'
 import CommissionsPage from './pages/barber/CommissionsPage'
 import ReservationsPage from './pages/barber/ReservationsPage'
+import StaffBoardPage from './pages/barber/StaffBoardPage'
 import SuppliesPage from './pages/barber/SuppliesPage'
 import BillsPage from './pages/barber/BillsPage'
+import MonthlyReportPage from './pages/barber/MonthlyReportPage'
 
 export default function App() {
   const { user, loading } = useAuth()
@@ -89,6 +91,8 @@ export default function App() {
         <Route path="/employees" element={<EmployeesPage />} />
         <Route path="/commissions" element={<CommissionsPage />} />
         <Route path="/reservations" element={<ReservationsPage />} />
+        <Route path="/staff-board" element={<StaffBoardPage />} />
+        <Route path="/monthly-report" element={<MonthlyReportPage />} />
         <Route path="/supplies" element={<SuppliesPage />} />
         <Route path="/bills" element={<BillsPage />} />
 

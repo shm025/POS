@@ -9,7 +9,7 @@ const STATUS_BADGE = { pending:'badge-warning', confirmed:'badge-info', done:'ba
 
 export default function BarberDashboard() {
   const { company } = useAuth()
-  const { t } = useLang()
+  const { t, lang } = useLang()
   const navigate = useNavigate()
   const [data, setData] = useState({ reservations:[], employees:[], supplies:[], bills:[] })
 
@@ -67,7 +67,10 @@ export default function BarberDashboard() {
       <div className="flex-between mb-4 no-print">
         <div>
           <h1 style={{ fontSize:'22px', fontWeight:900, color:'var(--primary)' }}>{t('dashboard_title')}</h1>
-          <p className="text-muted">{new Date().toLocaleDateString('ar-LB', { weekday:'long', year:'numeric', month:'long', day:'numeric' })}</p>
+          <p className="text-muted">{new Date().toLocaleDateString(
+            lang === 'EN' ? 'en-US' : lang === 'FR' ? 'fr-FR' : 'ar-LB',
+            { weekday:'long', year:'numeric', month:'long', day:'numeric' }
+          )}</p>
         </div>
         <div style={{ display:'flex', gap:'8px' }}>
           <button className="btn btn-primary" onClick={() => navigate('/reservations')}>📅 {t('new_reservation_btn')}</button>
@@ -142,7 +145,7 @@ export default function BarberDashboard() {
                 <div className="flex-between" style={{ fontSize:'13px', marginBottom:'6px' }}>
                   <div>
                     <span style={{ fontWeight:700 }}>{emp.name}</span>
-                    <span style={{ color:'var(--text-muted)', fontSize:'11px', marginRight:'8px' }}>{emp.level}</span>
+                    <span style={{ color:'var(--text-muted)', fontSize:'11px', marginRight:'8px', marginLeft:'6px' }}>{emp.level}</span>
                   </div>
                   <div style={{ textAlign:'left' }}>
                     <span style={{ fontWeight:700, direction:'ltr' }}>${fmt(empRevenue)}</span>
