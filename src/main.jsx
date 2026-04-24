@@ -1,6 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { BrowserRouter } from 'react-router-dom'
+import { HashRouter as BrowserRouter } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { LangProvider } from './contexts/LangContext'
 import App from './App'
