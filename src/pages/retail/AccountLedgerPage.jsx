@@ -3,15 +3,17 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useAccounts } from '../../hooks/useAccounts'
 import { useJournalEntries } from '../../hooks/useJournalEntries'
 import { useCustomers } from '../../hooks/useCustomers'
+import { useSuppliers } from '../../hooks/useSuppliers'
 import { useLang } from '../../contexts/LangContext'
 import { supabase } from '../../lib/supabase'
 import { fmt } from '../../utils/format'
 import TypeaheadInput from '../../components/common/TypeaheadInput'
 
-// selectedId format: 'acc_<uuid>' for chart accounts, 'cust_<uuid>' for customers
+// selectedId format: 'acc_<uuid>' | 'cust_<uuid>' | 'supp_<uuid>'
 function parseSelection(selectedId) {
   if (!selectedId) return { type: null, id: null }
   if (selectedId.startsWith('cust_')) return { type: 'customer', id: selectedId.slice(5) }
+  if (selectedId.startsWith('supp_')) return { type: 'supplier', id: selectedId.slice(5) }
   return { type: 'account', id: selectedId.slice(4) }
 }
 
@@ -21,6 +23,7 @@ export default function AccountLedgerPage() {
   const { accounts, loadAccounts } = useAccounts(company?.id)
   const { entries, loadEntries } = useJournalEntries(company?.id)
   const { customers, loadCustomers } = useCustomers(company?.id)
+  const { suppliers, loadSuppliers } = useSuppliers(company?.id)
 
   const [selectedId, setSelectedId] = useState('')
   const [searchText, setSearchText] = useState('')
@@ -33,11 +36,13 @@ export default function AccountLedgerPage() {
     loadAccounts()
     loadEntries()
     loadCustomers()
-  }, [loadAccounts, loadEntries, loadCustomers])
+    loadSuppliers()
+  }, [loadAccounts, loadEntries, loadCustomers, loadSuppliers])
 
   const allPartyItems = [
-    ...accounts.map(a => ({ id: `acc_${a.id}`, code: a.code, name: a.name })),
-    ...customers.map(c => ({ id: `cust_${c.id}`, code: '', name: c.name })),
+    ...accounts.map(a  => ({ id: `acc_${a.id}`,  code: a.code  || '', name: a.name, _grp: 'account'  })),
+    ...customers.map(c => ({ id: `cust_${c.id}`, code: c.code  || '', name: c.name, _grp: 'customer' })),
+    ...suppliers.map(s => ({ id: `supp_${s.id}`, code: s.code  || '', name: s.name, _grp: 'supplier' })),
   ]
 
   const buildLedger = useCallback(async () => {
@@ -121,8 +126,61 @@ export default function AccountLedgerPage() {
         if (r.isDr) bal += r.amt; else bal -= r.amt
         return { ...r, runBal: bal }
       }))
+
+    } else if (type === 'supplier') {
+      const supp = suppliers.find(s => s.id === id)
+      if (!supp) return
+      setDisplayName(`🏭 ${supp.name}`)
+
+      const [{ data: invData }, { data: voucherData }] = await Promise.all([
+        supabase
+          .from('invoices')
+          .select('date, number, doc_type, total')
+          .eq('company_id', company.id)
+          .eq('customer_name', supp.name)
+          .in('doc_type', ['purchases', 'purchases-return'])
+          .order('date', { ascending: true }),
+        supabase
+          .from('vouchers')
+          .select('date, number, description, amount')
+          .eq('company_id', company.id)
+          .eq('type', 'payment')
+          .eq('party', supp.name)
+          .order('date', { ascending: true }),
+      ])
+
+      // Supplier account: purchase = credit (we owe more), return = debit, payment = debit (we pay)
+      const allRows = [
+        ...(invData || []).map(inv => ({
+          date: inv.date || '',
+          desc: inv.doc_type === 'purchases'
+            ? `فاتورة مشتريات ${inv.number}`
+            : `مرتجع مشتريات ${inv.number}`,
+          isDr: inv.doc_type === 'purchases-return',
+          amt: parseFloat(inv.total || 0),
+        })),
+        ...(voucherData || []).map(v => ({
+          date: v.date || '',
+          desc: `سند دفع${v.number ? ' #' + v.number : ''}${v.description ? ' - ' + v.description : ''}`,
+          isDr: true,
+          amt: parseFloat(v.amount || 0),
+        })),
+      ].sort((a, b) => (a.date > b.date ? 1 : -1))
+
+      const before = fromDate ? allRows.filter(r => r.date < fromDate) : []
+      const after  = fromDate ? allRows.filter(r => r.date >= fromDate) : allRows
+
+      let opening = 0
+      before.forEach(r => { if (r.isDr) opening += r.amt; else opening -= r.amt })
+      setOpeningBal(opening)
+
+      let bal = opening
+      setRows(after.map(r => {
+        if (r.isDr) bal += r.amt; else bal -= r.amt
+        return { ...r, runBal: bal }
+      }))
     }
-  }, [selectedId, fromDate, accounts, entries, customers, company?.id])
+  }, [selectedId, fromDate, accounts, entries, customers, suppliers, company?.id])
 
   return (
     <div className="page-view">
@@ -139,14 +197,22 @@ export default function AccountLedgerPage() {
               onChange={val => { setSearchText(val); if (!val) setSelectedId('') }}
               onSelect={item => {
                 setSelectedId(item.id)
-                setSearchText(item.id.startsWith('cust_') ? `👤 ${item.name}` : `${item.code} - ${item.name}`)
+                const prefix = item._grp === 'customer' ? '👤' : item._grp === 'supplier' ? '🏭' : '📒'
+                setSearchText(item.code ? `${prefix} ${item.code} - ${item.name}` : `${prefix} ${item.name}`)
               }}
               items={allPartyItems}
               showAllOnFocus={true}
               placeholder={t('select_account')}
-              renderItem={it => (
-                <><span>{it.id.startsWith('cust_') ? `👤 ${it.name}` : `${it.code} - ${it.name}`}</span></>
-              )}
+              renderItem={it => {
+                const prefix = it._grp === 'customer' ? '👤' : it._grp === 'supplier' ? '🏭' : '📒'
+                const grpLabel = it._grp === 'customer' ? t('type_customer') : it._grp === 'supplier' ? t('type_supplier') : t('type_account')
+                return (
+                  <>
+                    <span>{prefix} {it.code ? `${it.code} - ` : ''}{it.name}</span>
+                    <span className="item-code">{grpLabel}</span>
+                  </>
+                )
+              }}
             />
           </div>
           <div className="form-group">
