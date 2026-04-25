@@ -20,7 +20,7 @@ const PAGE_KEY = {
 
 export default function Sidebar({ isOpen, onClose }) {
   const { user, company, logout } = useAuth()
-  const { t } = useLang()
+  const { t, lang } = useLang()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -47,7 +47,7 @@ export default function Sidebar({ isOpen, onClose }) {
   return (
     <div className={`sidebar${isOpen ? ' open' : ''}`}>
       <div className="sidebar-logo">
-        <h2>{company?.name || 'CATALAN POS'}</h2>
+        <h2>{lang === 'AR' ? (company?.name || company?.name_en) : (company?.name_en || company?.name) || 'CATALAN POS'}</h2>
         <p>{bizLabel[businessType] || ''}</p>
       </div>
 
